@@ -66,8 +66,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .logo-icon{font-size:48px;margin-bottom:8px}
 .logo-title{font-size:22px;font-weight:700;color:#185FA5}
 .logo-sub{font-size:13px;color:#888;margin-top:4px}
-/* 실시간 알림 토스트 */
-.toast{position:fixed;top:20px;right:20px;background:#185FA5;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateX(120%);transition:transform .3s ease;max-width:280px}
+.toast{position:fixed;top:20px;right:20px;background:#185FA5;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateX(120%);transition:transform .3s ease;max-width:280px;line-height:1.5}
 .toast.show{transform:translateX(0)}
 @media(max-width:480px){.g2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}.toast{top:10px;right:10px;left:10px;max-width:none}}
 </style>
@@ -77,10 +76,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <div id="toast" class="toast"></div>
 
 <div id="pg-loading" class="pg on">
-  <div class="loading-screen">
-    <div class="spinner"></div>
-    <div>데이터 불러오는 중...</div>
-  </div>
+  <div class="loading-screen"><div class="spinner"></div><div>데이터 불러오는 중...</div></div>
 </div>
 
 <div id="pg-login" class="pg">
@@ -144,18 +140,10 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
       <button class="tab" id="at2" onclick="aTab(2)">📋 예약관리</button>
       <button class="tab" id="at3" onclick="aTab(3)">📅 예약하기</button>
     </div>
-    <div id="at-0">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <button class="btn bp sm" onclick="openMC(null)">+ 센터 추가</button>
-      </div>
-      <div id="list-centers"></div>
-    </div>
+    <div id="at-0"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bp sm" onclick="openMC(null)">+ 센터 추가</button></div><div id="list-centers"></div></div>
     <div id="at-1" style="display:none"><div id="list-members"></div></div>
     <div id="at-2" style="display:none">
-      <div class="tabs">
-        <button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button>
-        <button class="tab" id="bt1" onclick="bTab(1)">확정예약</button>
-      </div>
+      <div class="tabs"><button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button><button class="tab" id="bt1" onclick="bTab(1)">확정예약</button></div>
       <div id="list-bookings"></div>
     </div>
     <div id="at-3" style="display:none"><div id="admin-book-centers"></div></div>
@@ -164,25 +152,16 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 
 <div id="pg-arooms" class="pg">
   <div class="wrap">
-    <div class="topbar">
-      <button class="btn sm" onclick="show('pg-admin')">← 관리자</button>
-      <button class="btn sm" onclick="logout()">로그아웃</button>
-    </div>
+    <div class="topbar"><button class="btn sm" onclick="show('pg-admin')">← 관리자</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div id="aroom-cinfo" class="card"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 10px">
-      <span style="font-size:15px;font-weight:600">회의실 목록</span>
-      <button class="btn bp sm" onclick="openMR(null)">+ 회의실 추가</button>
-    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 10px"><span style="font-size:15px;font-weight:600">회의실 목록</span><button class="btn bp sm" onclick="openMR(null)">+ 회의실 추가</button></div>
     <div id="list-arooms" class="g2"></div>
   </div>
 </div>
 
 <div id="pg-admin-urooms" class="pg">
   <div class="wrap">
-    <div class="topbar">
-      <button class="btn sm" onclick="show('pg-admin');aTab(3)">← 센터 목록</button>
-      <button class="btn sm" onclick="logout()">로그아웃</button>
-    </div>
+    <div class="topbar"><button class="btn sm" onclick="show('pg-admin');aTab(3)">← 센터 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div id="adm-uroom-cinfo" class="card" style="margin-bottom:1rem"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:10px">회의실 선택</div>
     <div id="list-adm-urooms" class="g2"></div>
@@ -191,10 +170,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 
 <div id="pg-book" class="pg">
   <div class="wrap">
-    <div class="topbar">
-      <button class="btn sm" id="book-back">← 회의실 목록</button>
-      <button class="btn sm" onclick="logout()">로그아웃</button>
-    </div>
+    <div class="topbar"><button class="btn sm" id="book-back">← 회의실 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div id="book-rinfo" class="card" style="margin-bottom:1rem"></div>
     <div class="g2" style="align-items:start">
       <div>
@@ -230,10 +206,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <div id="pg-user" class="pg">
   <div class="wrap">
     <div class="topbar">
-      <div>
-        <div style="font-size:17px;font-weight:700">센터 목록</div>
-        <div id="uwelcome" style="font-size:13px;color:#666"></div>
-      </div>
+      <div><div style="font-size:17px;font-weight:700">센터 목록</div><div id="uwelcome" style="font-size:13px;color:#666"></div></div>
       <button class="btn sm" onclick="logout()">로그아웃</button>
     </div>
     <div id="ubanner"></div>
@@ -243,10 +216,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
     </div>
     <div id="ut-0"><div id="list-ucenters"></div></div>
     <div id="ut-1" style="display:none">
-      <div class="tabs">
-        <button class="tab on" id="ubt0" onclick="ubTab(0)">확정예약</button>
-        <button class="tab" id="ubt1" onclick="ubTab(1)">승인대기</button>
-      </div>
+      <div class="tabs"><button class="tab on" id="ubt0" onclick="ubTab(0)">확정예약</button><button class="tab" id="ubt1" onclick="ubTab(1)">승인대기</button></div>
       <div id="my-bookings"></div>
     </div>
   </div>
@@ -254,10 +224,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 
 <div id="pg-urooms" class="pg">
   <div class="wrap">
-    <div class="topbar">
-      <button class="btn sm" onclick="show('pg-user')">← 센터 목록</button>
-      <button class="btn sm" onclick="logout()">로그아웃</button>
-    </div>
+    <div class="topbar"><button class="btn sm" onclick="show('pg-user')">← 센터 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div id="uroom-cinfo" class="card" style="margin-bottom:1rem"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:10px">회의실 선택</div>
     <div id="list-urooms" class="g2"></div>
@@ -269,10 +236,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   <label>센터 이름</label><input id="mc-name" type="text" placeholder="센터 이름">
   <label>전화번호</label><input id="mc-phone" type="text" placeholder="02-0000-0000">
   <label>주소</label><input id="mc-addr" type="text" placeholder="주소">
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn sm" onclick="closeOv('mc')">취소</button>
-    <button class="btn bp sm" onclick="saveCenter()">저장</button>
-  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('mc')">취소</button><button class="btn bp sm" onclick="saveCenter()">저장</button></div>
 </div></div>
 
 <div id="ov-mr" class="ov"><div class="modal">
@@ -281,10 +245,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   <label>수용 인원</label><input id="mr-cap" type="number" placeholder="인원" min="1">
   <label>프로젝터</label><select id="mr-proj"><option value="1">있음</option><option value="0">없음</option></select>
   <label>시간당 금액 (원)</label><input id="mr-price" type="number" placeholder="10000" step="1000">
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn sm" onclick="closeOv('mr')">취소</button>
-    <button class="btn bp sm" onclick="saveRoom()">저장</button>
-  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('mr')">취소</button><button class="btn bp sm" onclick="saveRoom()">저장</button></div>
 </div></div>
 
 <div id="ov-medit" class="ov"><div class="modal">
@@ -293,10 +254,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   <label style="color:#aaa">핸드폰번호 (수정 불가)</label><input id="me-phone" disabled style="opacity:.5">
   <label>입주정보</label><input id="me-tenancy" placeholder="입주정보">
   <label>업체명</label><input id="me-company" placeholder="업체명">
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn sm" onclick="closeOv('medit')">취소</button>
-    <button class="btn bp sm" onclick="saveMedit()">저장</button>
-  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('medit')">취소</button><button class="btn bp sm" onclick="saveMedit()">저장</button></div>
 </div></div>
 
 <div id="ov-bedit" class="ov"><div class="modal">
@@ -306,20 +264,14 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   <label>시작 시간</label><select id="be-start"></select>
   <label>종료 시간</label><select id="be-end"></select>
   <div id="be-err" class="err"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-    <button class="btn sm" onclick="closeOv('bedit')">취소</button>
-    <button class="btn bp sm" onclick="saveBedit()">저장</button>
-  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('bedit')">취소</button><button class="btn bp sm" onclick="saveBedit()">저장</button></div>
 </div></div>
 
 <div id="ov-bconfirm" class="ov"><div class="modal">
   <h3 id="bc-t">예약 확인</h3>
   <div id="bc-info" style="font-size:13px;color:#444;margin-bottom:1rem;line-height:1.8;background:#f5f6fa;padding:12px;border-radius:8px"></div>
   <div id="bc-err" class="err"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end">
-    <button class="btn sm" onclick="closeOv('bconfirm')">취소</button>
-    <button class="btn bp sm" id="bc-btn" onclick="submitBook()">확정</button>
-  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn sm" onclick="closeOv('bconfirm')">취소</button><button class="btn bp sm" id="bc-btn" onclick="submitBook()">확정</button></div>
 </div></div>
 
 <script>
@@ -333,106 +285,99 @@ var ME = null, CID = null, RID = null;
 var CY, CM, SDATE = null, SSLOTS = [];
 var ABTAB = 0, UBTAB = 0, BOOK_BACK_PAGE = 'pg-urooms';
 var centers = [], rooms = [], members = [], bookings = [];
-var realtimeChannel = null;
-var toastTimer = null;
+var realtimeChannel = null, toastTimer = null;
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function pad(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function cleanPhone(p){ return p.replace(/[^0-9]/g,''); }
 
-function show(id){
-  document.querySelectorAll('.pg').forEach(function(p){ p.classList.remove('on'); });
-  document.getElementById(id).classList.add('on');
-}
+function show(id){ document.querySelectorAll('.pg').forEach(function(p){ p.classList.remove('on'); }); document.getElementById(id).classList.add('on'); }
 function openOv(k){ document.getElementById('ov-'+k).classList.add('on'); }
 function closeOv(k){ document.getElementById('ov-'+k).classList.remove('on'); }
 
-/* ── 토스트 알림 ── */
 function showToast(msg){
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  var t=document.getElementById('toast');
+  t.innerHTML=msg; t.classList.add('show');
   if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+  toastTimer=setTimeout(function(){ t.classList.remove('show'); },5000);
 }
 
-/* ── 실시간 구독 시작 ── */
+/* ── 실시간 구독 ── */
 function startRealtime(){
-  if(realtimeChannel) sb.removeChannel(realtimeChannel);
-  realtimeChannel = sb.channel('bookings-realtime')
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bookings'}, function(payload){
-      var newBook = payload.new;
-      /* 중복 방지 */
-      var exists = false;
-      for(var i=0;i<bookings.length;i++){ if(bookings[i].id===newBook.id){ exists=true; break; } }
-      if(!exists) bookings.push(newBook);
+  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
+
+  realtimeChannel = sb.channel('wemake-rt-'+Date.now())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'bookings'}, function(payload){
+      var nb=payload.new;
+      var exists=false;
+      for(var i=0;i<bookings.length;i++){ if(bookings[i].id===nb.id){ exists=true; break; } }
+      if(!exists) bookings.push(nb);
 
       if(ME && ME.role==='admin'){
-        /* 관리자: 승인요청 들어오면 알림 + 예약관리 갱신 */
-        if(newBook.status==='pending'){
-          showToast('🔔 새 승인요청: '+newBook.uname+' ('+newBook.date+' '+newBook.s+'~'+newBook.e+')');
+        if(nb.status==='pending'){
+          showToast('🔔 새 승인요청<br><strong>'+nb.uname+'</strong> ('+nb.date+' '+nb.s+'~'+nb.e+')');
           renderAdmin();
         }
       } else if(ME && ME.role==='user'){
-        /* 이용자: 예약 화면 슬롯 갱신 */
-        if(SDATE && newBook.rid===RID && newBook.date===SDATE) renderSlots();
+        if(SDATE && nb.rid===RID && nb.date===SDATE) renderSlots();
       }
     })
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bookings'}, function(payload){
-      var updated = payload.new;
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'bookings'}, function(payload){
+      var ub=payload.new;
       /* 로컬 배열 업데이트 */
+      var found=false;
       for(var i=0;i<bookings.length;i++){
-        if(bookings[i].id===updated.id){ bookings[i]=updated; break; }
+        if(bookings[i].id===ub.id){ bookings[i]=ub; found=true; break; }
       }
+      if(!found) bookings.push(ub);
 
       if(ME && ME.role==='admin'){
+        /* 관리자: 예약관리 화면 갱신 */
         renderAdmin();
       } else if(ME && ME.role==='user'){
-        /* 이용자: 내 예약이 승인됐으면 알림 */
-        if(updated.uid===ME.uid && updated.status==='confirmed'){
-          showToast('✅ 예약이 승인되었습니다! '+updated.date+' '+updated.s+'~'+updated.e);
-          if(SDATE && updated.rid===RID && updated.date===SDATE) renderSlots();
-          /* 내 예약 탭이 열려있으면 갱신 */
-          var ut1 = document.getElementById('ut-1');
-          if(ut1 && ut1.style.display==='block') renderMyBookings();
+        /* 이용자: 내 예약이 승인됐을 때 */
+        if(ub.uid===ME.uid && ub.status==='confirmed'){
+          showToast('✅ 예약이 승인되었습니다!<br><strong>'+ub.date+' '+ub.s+'~'+ub.e+'</strong>');
         }
-      }
-    })
-    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bookings'}, function(payload){
-      var deletedId = payload.old.id;
-      bookings = bookings.filter(function(b){ return b.id!==deletedId; });
-
-      if(ME && ME.role==='admin'){
-        renderAdmin();
-      } else if(ME && ME.role==='user'){
-        if(SDATE && RID) renderSlots();
-        var ut1 = document.getElementById('ut-1');
+        /* 내 예약 탭 갱신 */
+        var ut1=document.getElementById('ut-1');
         if(ut1 && ut1.style.display==='block') renderMyBookings();
+        /* 예약 슬롯 갱신 */
+        if(SDATE && RID && ub.rid===RID && ub.date===SDATE) renderSlots();
       }
     })
-    .subscribe();
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'bookings'}, function(payload){
+      var did=payload.old ? payload.old.id : null;
+      if(!did) return;
+      var filtered=[];
+      for(var i=0;i<bookings.length;i++){ if(bookings[i].id!==did) filtered.push(bookings[i]); }
+      bookings=filtered;
+
+      if(ME && ME.role==='admin'){ renderAdmin(); }
+      else if(ME && ME.role==='user'){
+        var ut1=document.getElementById('ut-1');
+        if(ut1 && ut1.style.display==='block') renderMyBookings();
+        if(SDATE && RID) renderSlots();
+      }
+    })
+    .subscribe(function(status){
+      console.log('Realtime status:', status);
+    });
 }
 
-/* ── 실시간 구독 해제 ── */
 function stopRealtime(){
   if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
 }
 
 function goLogin(){
-  document.getElementById('lid').value='';
-  document.getElementById('lpw').value='';
-  document.getElementById('lerr').style.display='none';
-  show('pg-login');
+  document.getElementById('lid').value=''; document.getElementById('lpw').value='';
+  document.getElementById('lerr').style.display='none'; show('pg-login');
 }
-
 function goSignup(){
-  document.getElementById('su-name').value='';
-  document.getElementById('su-phone').value='';
-  document.getElementById('su-pw').value='';
-  document.getElementById('su-pw2').value='';
-  document.getElementById('su-err').style.display='none';
-  document.getElementById('su-ok').style.display='none';
+  document.getElementById('su-name').value=''; document.getElementById('su-phone').value='';
+  document.getElementById('su-pw').value=''; document.getElementById('su-pw2').value='';
+  document.getElementById('su-err').style.display='none'; document.getElementById('su-ok').style.display='none';
   show('pg-signup');
 }
 
@@ -449,11 +394,12 @@ async function doLogin(){
   var id=cleanPhone(document.getElementById('lid').value.trim());
   var pw=document.getElementById('lpw').value.trim();
   var err=document.getElementById('lerr');
-  if(id===ADMIN_ID&&pw===ADMIN_PW){
+  if(id===ADMIN_ID && pw===ADMIN_PW){
     ME={role:'admin'}; err.style.display='none';
     await loadAll(); startRealtime(); renderAdmin(); show('pg-admin'); return;
   }
-  var u=null; for(var i=0;i<members.length;i++){ if(members[i].phone===id&&members[i].pw===pw){ u=members[i]; break; } }
+  var u=null;
+  for(var i=0;i<members.length;i++){ if(members[i].phone===id && members[i].pw===pw){ u=members[i]; break; } }
   if(u){ ME={role:'user',uid:u.id}; err.style.display='none'; startRealtime(); renderUser(); show('pg-user'); }
   else { err.style.display='block'; }
 }
@@ -461,8 +407,7 @@ async function doLogin(){
 async function doSignup(){
   var name=document.getElementById('su-name').value.trim();
   var phone=cleanPhone(document.getElementById('su-phone').value.trim());
-  var pw=document.getElementById('su-pw').value;
-  var pw2=document.getElementById('su-pw2').value;
+  var pw=document.getElementById('su-pw').value, pw2=document.getElementById('su-pw2').value;
   var err=document.getElementById('su-err'), ok=document.getElementById('su-ok');
   err.style.display='none'; ok.style.display='none';
   if(!name){ err.textContent='이름을 입력하세요.'; err.style.display='block'; return; }
@@ -512,7 +457,6 @@ function openArooms(cid){
   document.getElementById('aroom-cinfo').innerHTML='<div style="font-size:16px;font-weight:600">'+c.name+'</div><div style="font-size:13px;color:#666;margin-top:3px">'+c.phone+' | '+c.addr+'</div>';
   renderArooms(); show('pg-arooms');
 }
-
 function renderArooms(){
   var el=document.getElementById('list-arooms');
   var rs=[]; for(var i=0;i<rooms.length;i++){ if(rooms[i].cid===CID) rs.push(rooms[i]); }
@@ -605,7 +549,6 @@ async function delMember(id){
   members=members.filter(function(m){return m.id!==id;}); bookings=bookings.filter(function(b){return b.uid!==id;});
   renderMembers();
 }
-
 function getMemberCompany(uid){ for(var i=0;i<members.length;i++){ if(members[i].id===uid) return members[i].company||''; } return ''; }
 
 function renderAdminBooks(){
@@ -634,14 +577,17 @@ function renderAdminBooks(){
 }
 
 async function approveBook(id){
-  await sb.from('bookings').update({status:'confirmed'}).eq('id',id);
+  /* DB 업데이트 — Realtime이 UPDATE 이벤트를 이용자에게 전달 */
+  var res = await sb.from('bookings').update({status:'confirmed'}).eq('id',id);
+  if(res.error){ alert('오류: '+res.error.message); return; }
+  /* 관리자 로컬 배열도 업데이트 */
   for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bookings[i].status='confirmed'; break; } }
   renderAdmin();
 }
 async function deleteBook(id){
   if(!confirm('예약을 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('id',id);
-  bookings=bookings.filter(function(b){return b.id!==id;});
+  var filtered=[]; for(var i=0;i<bookings.length;i++){ if(bookings[i].id!==id) filtered.push(bookings[i]); } bookings=filtered;
   renderAdmin();
 }
 function openBedit(id){
@@ -865,7 +811,6 @@ function openBconfirm(){
   document.getElementById('bc-err').style.display='none';
   openOv('bconfirm');
 }
-
 async function submitBook(){
   var isAdmin=ME.role==='admin';
   var uname=isAdmin?'관리자':getUser().name;
