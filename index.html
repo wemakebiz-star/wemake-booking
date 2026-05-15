@@ -66,10 +66,15 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .logo-icon{font-size:48px;margin-bottom:8px}
 .logo-title{font-size:22px;font-weight:700;color:#185FA5}
 .logo-sub{font-size:13px;color:#888;margin-top:4px}
-@media(max-width:480px){.g2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}}
+/* 실시간 알림 토스트 */
+.toast{position:fixed;top:20px;right:20px;background:#185FA5;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateX(120%);transition:transform .3s ease;max-width:280px}
+.toast.show{transform:translateX(0)}
+@media(max-width:480px){.g2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}.toast{top:10px;right:10px;left:10px;max-width:none}}
 </style>
 </head>
 <body>
+
+<div id="toast" class="toast"></div>
 
 <div id="pg-loading" class="pg on">
   <div class="loading-screen">
@@ -328,6 +333,8 @@ var ME = null, CID = null, RID = null;
 var CY, CM, SDATE = null, SSLOTS = [];
 var ABTAB = 0, UBTAB = 0, BOOK_BACK_PAGE = 'pg-urooms';
 var centers = [], rooms = [], members = [], bookings = [];
+var realtimeChannel = null;
+var toastTimer = null;
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -341,7 +348,77 @@ function show(id){
 function openOv(k){ document.getElementById('ov-'+k).classList.add('on'); }
 function closeOv(k){ document.getElementById('ov-'+k).classList.remove('on'); }
 
-/* ── 로그인 화면: 입력란 초기화 ── */
+/* ── 토스트 알림 ── */
+function showToast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+}
+
+/* ── 실시간 구독 시작 ── */
+function startRealtime(){
+  if(realtimeChannel) sb.removeChannel(realtimeChannel);
+  realtimeChannel = sb.channel('bookings-realtime')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bookings'}, function(payload){
+      var newBook = payload.new;
+      /* 중복 방지 */
+      var exists = false;
+      for(var i=0;i<bookings.length;i++){ if(bookings[i].id===newBook.id){ exists=true; break; } }
+      if(!exists) bookings.push(newBook);
+
+      if(ME && ME.role==='admin'){
+        /* 관리자: 승인요청 들어오면 알림 + 예약관리 갱신 */
+        if(newBook.status==='pending'){
+          showToast('🔔 새 승인요청: '+newBook.uname+' ('+newBook.date+' '+newBook.s+'~'+newBook.e+')');
+          renderAdmin();
+        }
+      } else if(ME && ME.role==='user'){
+        /* 이용자: 예약 화면 슬롯 갱신 */
+        if(SDATE && newBook.rid===RID && newBook.date===SDATE) renderSlots();
+      }
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bookings'}, function(payload){
+      var updated = payload.new;
+      /* 로컬 배열 업데이트 */
+      for(var i=0;i<bookings.length;i++){
+        if(bookings[i].id===updated.id){ bookings[i]=updated; break; }
+      }
+
+      if(ME && ME.role==='admin'){
+        renderAdmin();
+      } else if(ME && ME.role==='user'){
+        /* 이용자: 내 예약이 승인됐으면 알림 */
+        if(updated.uid===ME.uid && updated.status==='confirmed'){
+          showToast('✅ 예약이 승인되었습니다! '+updated.date+' '+updated.s+'~'+updated.e);
+          if(SDATE && updated.rid===RID && updated.date===SDATE) renderSlots();
+          /* 내 예약 탭이 열려있으면 갱신 */
+          var ut1 = document.getElementById('ut-1');
+          if(ut1 && ut1.style.display==='block') renderMyBookings();
+        }
+      }
+    })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bookings'}, function(payload){
+      var deletedId = payload.old.id;
+      bookings = bookings.filter(function(b){ return b.id!==deletedId; });
+
+      if(ME && ME.role==='admin'){
+        renderAdmin();
+      } else if(ME && ME.role==='user'){
+        if(SDATE && RID) renderSlots();
+        var ut1 = document.getElementById('ut-1');
+        if(ut1 && ut1.style.display==='block') renderMyBookings();
+      }
+    })
+    .subscribe();
+}
+
+/* ── 실시간 구독 해제 ── */
+function stopRealtime(){
+  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
+}
+
 function goLogin(){
   document.getElementById('lid').value='';
   document.getElementById('lpw').value='';
@@ -349,7 +426,6 @@ function goLogin(){
   show('pg-login');
 }
 
-/* ── 회원가입 화면: 입력란 + 메시지 초기화 ── */
 function goSignup(){
   document.getElementById('su-name').value='';
   document.getElementById('su-phone').value='';
@@ -373,9 +449,12 @@ async function doLogin(){
   var id=cleanPhone(document.getElementById('lid').value.trim());
   var pw=document.getElementById('lpw').value.trim();
   var err=document.getElementById('lerr');
-  if(id===ADMIN_ID&&pw===ADMIN_PW){ ME={role:'admin'}; err.style.display='none'; await loadAll(); renderAdmin(); show('pg-admin'); return; }
+  if(id===ADMIN_ID&&pw===ADMIN_PW){
+    ME={role:'admin'}; err.style.display='none';
+    await loadAll(); startRealtime(); renderAdmin(); show('pg-admin'); return;
+  }
   var u=null; for(var i=0;i<members.length;i++){ if(members[i].phone===id&&members[i].pw===pw){ u=members[i]; break; } }
-  if(u){ ME={role:'user',uid:u.id}; err.style.display='none'; renderUser(); show('pg-user'); }
+  if(u){ ME={role:'user',uid:u.id}; err.style.display='none'; startRealtime(); renderUser(); show('pg-user'); }
   else { err.style.display='block'; }
 }
 
@@ -394,16 +473,13 @@ async function doSignup(){
   var newM={id:uid(),name:name,phone:phone,pw:pw,tenancy:'',company:''};
   var res=await sb.from('members').insert(newM);
   if(res.error){ err.textContent='오류: '+res.error.message; err.style.display='block'; return; }
-  members.push(newM);
-  ok.style.display='block';
-  document.getElementById('su-name').value='';
-  document.getElementById('su-phone').value='';
-  document.getElementById('su-pw').value='';
-  document.getElementById('su-pw2').value='';
+  members.push(newM); ok.style.display='block';
+  document.getElementById('su-name').value=''; document.getElementById('su-phone').value='';
+  document.getElementById('su-pw').value=''; document.getElementById('su-pw2').value='';
   setTimeout(function(){ goLogin(); },1500);
 }
 
-function logout(){ ME=null; SSLOTS=[]; SDATE=null; goLogin(); }
+function logout(){ ME=null; SSLOTS=[]; SDATE=null; stopRealtime(); goLogin(); }
 
 function renderAdmin(){
   var pending=0; for(var i=0;i<bookings.length;i++){ if(bookings[i].status==='pending') pending++; }
@@ -462,7 +538,6 @@ function openMC(id){
   else { document.getElementById('mc-name').value=''; document.getElementById('mc-phone').value=''; document.getElementById('mc-addr').value=''; }
   openOv('mc');
 }
-
 async function saveCenter(){
   var id=document.getElementById('mc-id').value, name=document.getElementById('mc-name').value.trim(), phone=document.getElementById('mc-phone').value.trim(), addr=document.getElementById('mc-addr').value.trim();
   if(!name) return;
@@ -470,21 +545,18 @@ async function saveCenter(){
   else { var obj={id:uid(),name:name,phone:phone,addr:addr}; await sb.from('centers').insert(obj); centers.push(obj); }
   closeOv('mc'); renderCenters(); if(id&&CID===id) openArooms(id);
 }
-
 async function delCenter(id){
   if(!confirm('센터를 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('cid',id); await sb.from('rooms').delete().eq('cid',id); await sb.from('centers').delete().eq('id',id);
   centers=centers.filter(function(c){return c.id!==id;}); rooms=rooms.filter(function(r){return r.cid!==id;}); bookings=bookings.filter(function(b){return b.cid!==id;});
   renderCenters();
 }
-
 function openMR(id){
   document.getElementById('mr-id').value=id||''; document.getElementById('mr-t').textContent=id?'회의실 편집':'회의실 추가';
   if(id){ var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===id){ r=rooms[i]; break; } } document.getElementById('mr-name').value=r.name; document.getElementById('mr-cap').value=r.cap; document.getElementById('mr-proj').value=r.proj?'1':'0'; document.getElementById('mr-price').value=r.price; }
   else { document.getElementById('mr-name').value=''; document.getElementById('mr-cap').value=''; document.getElementById('mr-proj').value='1'; document.getElementById('mr-price').value=''; }
   openOv('mr');
 }
-
 async function saveRoom(){
   var id=document.getElementById('mr-id').value, name=document.getElementById('mr-name').value.trim(), cap=parseInt(document.getElementById('mr-cap').value)||0, proj=document.getElementById('mr-proj').value==='1', price=parseInt(document.getElementById('mr-price').value)||0;
   if(!name||!cap) return;
@@ -492,7 +564,6 @@ async function saveRoom(){
   else { var obj={id:uid(),cid:CID,name:name,cap:cap,proj:proj,price:price}; await sb.from('rooms').insert(obj); rooms.push(obj); }
   closeOv('mr'); renderArooms();
 }
-
 async function delRoom(id){
   if(!confirm('회의실을 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('rid',id); await sb.from('rooms').delete().eq('id',id);
@@ -517,20 +588,17 @@ function renderMembers(){
   }
   h+='</div>'; el.innerHTML=h;
 }
-
 function openMedit(id){
   var m=null; for(var i=0;i<members.length;i++){ if(members[i].id===id){ m=members[i]; break; } }
   document.getElementById('me-id').value=id; document.getElementById('me-name').value=m.name; document.getElementById('me-phone').value=m.phone;
   document.getElementById('me-tenancy').value=m.tenancy||''; document.getElementById('me-company').value=m.company||''; openOv('medit');
 }
-
 async function saveMedit(){
   var id=document.getElementById('me-id').value, tenancy=document.getElementById('me-tenancy').value.trim(), company=document.getElementById('me-company').value.trim();
   await sb.from('members').update({tenancy:tenancy,company:company}).eq('id',id);
   for(var i=0;i<members.length;i++){ if(members[i].id===id){ members[i].tenancy=tenancy; members[i].company=company; break; } }
   closeOv('medit'); renderMembers();
 }
-
 async function delMember(id){
   if(!confirm('회원을 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('uid',id); await sb.from('members').delete().eq('id',id);
@@ -551,7 +619,7 @@ function renderAdminBooks(){
     for(var j=0;j<rooms.length;j++){ if(rooms[j].id===bk.rid){ rn=rooms[j].name; break; } }
     for(var j=0;j<centers.length;j++){ if(centers[j].id===bk.cid){ cn=centers[j].name; break; } }
     var company=getMemberCompany(bk.uid);
-    var bookerLine=bk.uname+' ('+bk.uphone+')'+(company?' / '+company:'');
+    var bookerLine=bk.uname+' ('+(bk.uphone||'')+')'+(company?' / '+company:'');
     h+='<div class="brow"><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:6px">'
       +'<div><div style="font-weight:600;font-size:14px">'+cn+' — '+rn+'</div>'
       +'<div style="font-size:13px;color:#666;margin-top:2px">'+bk.date+' '+bk.s+'~'+bk.e+'</div>'
@@ -570,14 +638,12 @@ async function approveBook(id){
   for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bookings[i].status='confirmed'; break; } }
   renderAdmin();
 }
-
 async function deleteBook(id){
   if(!confirm('예약을 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('id',id);
   bookings=bookings.filter(function(b){return b.id!==id;});
   renderAdmin();
 }
-
 function openBedit(id){
   var bk=null; for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bk=bookings[i]; break; } }
   var rn='?'; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===bk.rid){ rn=rooms[i].name; break; } }
@@ -591,9 +657,7 @@ function openBedit(id){
   ss.value=bk.s; se.value=bk.e;
   document.getElementById('be-err').style.display='none'; openOv('bedit');
 }
-
 function slotsRange(s,e){ var r=[],cur=s; while(cur<e){ r.push(cur); var p=cur.split(':'); var t=parseInt(p[0])*60+parseInt(p[1])+30; cur=pad(Math.floor(t/60))+':'+pad(t%60); } return r; }
-
 async function saveBedit(){
   var id=document.getElementById('be-id').value, date=document.getElementById('be-date').value, s=document.getElementById('be-start').value, e=document.getElementById('be-end').value;
   var err=document.getElementById('be-err');
@@ -622,7 +686,6 @@ function renderAdminBookCenters(){
   }
   el.innerHTML=h;
 }
-
 function openAdmUrooms(cid){
   CID=cid; var c=null; for(var i=0;i<centers.length;i++){ if(centers[i].id===cid){ c=centers[i]; break; } }
   document.getElementById('adm-uroom-cinfo').innerHTML='<div style="font-size:16px;font-weight:600">'+c.name+'</div><div style="font-size:13px;color:#666;margin-top:3px">'+c.phone+' | '+c.addr+'</div>';
@@ -643,7 +706,6 @@ function openAdmUrooms(cid){
 }
 
 function getUser(){ for(var i=0;i<members.length;i++){ if(members[i].id===ME.uid) return members[i]; } return null; }
-
 function uTab(n){ for(var i=0;i<2;i++){ document.getElementById('ut'+i).classList.toggle('on',i===n); document.getElementById('ut-'+i).style.display=i===n?'block':'none'; } if(n===1) renderMyBookings(); }
 function ubTab(n){ UBTAB=n; for(var i=0;i<2;i++) document.getElementById('ubt'+i).classList.toggle('on',i===n); renderMyBookings(); }
 
@@ -656,7 +718,6 @@ function renderUser(){
   document.getElementById('ut-0').style.display='block'; document.getElementById('ut-1').style.display='none';
   renderUcenters();
 }
-
 function renderUcenters(){
   var el=document.getElementById('list-ucenters');
   if(!centers.length){ el.innerHTML='<p style="color:#888;font-size:14px;padding:1rem 0">등록된 센터가 없습니다.</p>'; return; }
@@ -670,7 +731,6 @@ function renderUcenters(){
   }
   el.innerHTML=h;
 }
-
 function openUrooms(cid){
   CID=cid; var c=null; for(var i=0;i<centers.length;i++){ if(centers[i].id===cid){ c=centers[i]; break; } }
   document.getElementById('uroom-cinfo').innerHTML='<div style="font-size:16px;font-weight:600">'+c.name+'</div><div style="font-size:13px;color:#666;margin-top:3px">'+c.phone+' | '+c.addr+'</div>';
@@ -689,7 +749,6 @@ function openUrooms(cid){
   }
   el.innerHTML=h; show('pg-urooms');
 }
-
 function renderMyBookings(){
   var el=document.getElementById('my-bookings');
   var status=UBTAB===0?'confirmed':'pending';
@@ -702,7 +761,7 @@ function renderMyBookings(){
     for(var j=0;j<centers.length;j++){ if(centers[j].id===bk.cid){ cn=centers[j].name; break; } }
     h+='<div class="brow"><div style="font-weight:600;font-size:14px">'+cn+' — '+rn+'</div>'
       +'<div style="font-size:13px;color:#666;margin-top:2px">'+bk.date+' '+bk.s+'~'+bk.e+'</div>'
-      +(bk.status==='confirmed'?'<span class="bge bg" style="margin-top:4px">확정</span>':'<span class="bge ba" style="margin-top:4px">승인 대기</span>')
+      +(bk.status==='confirmed'?'<span class="bge bg" style="margin-top:4px">✅ 확정</span>':'<span class="bge ba" style="margin-top:4px">⏳ 승인 대기</span>')
       +'</div>';
   }
   h+='</div>'; el.innerHTML=h;
@@ -725,7 +784,6 @@ function openBook(rid, caller){
 }
 
 function mv(d){ CM+=d; if(CM>11){CM=0;CY++;} if(CM<0){CM=11;CY--;} renderCal(); }
-
 function renderCal(){
   document.getElementById('cal-lbl').textContent=CY+'년 '+(CM+1)+'월';
   var first=new Date(CY,CM,1).getDay(), last=new Date(CY,CM+1,0).getDate();
@@ -741,14 +799,12 @@ function renderCal(){
   }
   document.getElementById('cal-cells').innerHTML=h;
 }
-
 function selDay(s){
   SDATE=s; SSLOTS=[]; renderCal();
   var p=s.split('-');
   document.getElementById('slot-lbl').textContent=p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일';
   renderSlots(); document.getElementById('selbox').style.display='none';
 }
-
 function renderSlots(){
   var conf=[], pend=[];
   for(var i=0;i<bookings.length;i++){
@@ -757,18 +813,13 @@ function renderSlots(){
     if(b.status==='confirmed'){ for(var j=0;j<sl.length;j++) conf.push(sl[j]); }
     else if(b.status==='pending'){ for(var j=0;j<sl.length;j++) pend.push(sl[j]); }
   }
-  var now=new Date();
-  var todayStr=dateStr(now);
-  var nowMin=now.getHours()*60+now.getMinutes();
+  var now=new Date(), todayStr=dateStr(now), nowMin=now.getHours()*60+now.getMinutes();
   var h='';
   for(var hr=8;hr<22;hr++){
     for(var mn=0;mn<60;mn+=30){
       var sl=pad(hr)+':'+pad(mn);
-      var nh=mn===30?hr+1:hr, nm=mn===30?0:30;
-      var en=pad(nh)+':'+pad(nm);
-      var isC=conf.indexOf(sl)>=0;
-      var isP=pend.indexOf(sl)>=0;
-      var isPk=SSLOTS.indexOf(sl)>=0;
+      var nh=mn===30?hr+1:hr, nm=mn===30?0:30, en=pad(nh)+':'+pad(nm);
+      var isC=conf.indexOf(sl)>=0, isP=pend.indexOf(sl)>=0, isPk=SSLOTS.indexOf(sl)>=0;
       var isPast=(SDATE===todayStr&&(hr*60+mn)<=nowMin);
       var cls, cl;
       if(isC){ cls='slot taken'; cl=''; }
@@ -779,18 +830,12 @@ function renderSlots(){
       h+='<div class="'+cls+'" '+cl+'>'+sl+'~'+en
         +(isC?'<br><span style="font-size:10px">예약됨</span>'
         :isP?'<br><span style="font-size:10px">대기중</span>'
-        :isPast?'<br><span style="font-size:10px">지난시간</span>':'')
-        +'</div>';
+        :isPast?'<br><span style="font-size:10px">지난시간</span>':'')+'</div>';
     }
   }
   document.getElementById('slots').innerHTML=h;
 }
-
-function toggleSlot(s){
-  var i=SSLOTS.indexOf(s); if(i>=0) SSLOTS.splice(i,1); else SSLOTS.push(s);
-  SSLOTS.sort(); renderSlots(); updateSel();
-}
-
+function toggleSlot(s){ var i=SSLOTS.indexOf(s); if(i>=0) SSLOTS.splice(i,1); else SSLOTS.push(s); SSLOTS.sort(); renderSlots(); updateSel(); }
 function updateSel(){
   if(!SSLOTS.length){ document.getElementById('selbox').style.display='none'; return; }
   document.getElementById('selbox').style.display='block';
@@ -799,7 +844,6 @@ function updateSel(){
   document.getElementById('sel-txt').textContent=SSLOTS[0]+' ~ '+endOf(SSLOTS);
   document.getElementById('sel-price').textContent='예상금액: '+total.toLocaleString()+'원 ('+SSLOTS.length*30+'분)';
 }
-
 function endOf(sl){ var last=sl[sl.length-1]; var p=last.split(':'); var t=parseInt(p[0])*60+parseInt(p[1])+30; return pad(Math.floor(t/60))+':'+pad(t%60); }
 
 function openBconfirm(){
