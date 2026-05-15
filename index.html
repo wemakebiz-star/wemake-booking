@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>위메이크 회의실 예약 시스템</title>
-<link rel="manifest" href="#" />
 <meta name="theme-color" content="#185FA5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -48,7 +47,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .slot.taken{background:#FCEBEB;color:#A32D2D;border-color:#F09595;cursor:not-allowed}
 .slot.pend{background:#FAEEDA;color:#633806;border-color:#FAC775;cursor:not-allowed}
 .slot.pick{background:#185FA5;color:#fff;border-color:#185FA5}
-.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding-top:60px;padding:60px 1rem 1rem}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:60px 1rem 1rem}
 .ov.on{display:flex}
 .modal{background:#fff;border-radius:14px;border:1px solid #e8e9ef;padding:1.5rem;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
 .modal h3{font-size:16px;font-weight:600;margin-bottom:1rem}
@@ -66,7 +65,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .logo-icon{font-size:48px;margin-bottom:8px}
 .logo-title{font-size:22px;font-weight:700;color:#185FA5}
 .logo-sub{font-size:13px;color:#888;margin-top:4px}
-@media(max-width:480px){.g2{grid-template-columns:1fr}.slots{grid-template-columns:1fr 1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}}
+@media(max-width:480px){.g2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}}
 </style>
 </head>
 <body>
@@ -113,7 +112,8 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
       </div>
       <div class="card">
         <label>이름</label><input id="su-name" type="text" placeholder="이름">
-        <label>핸드폰번호 (아이디)</label><input id="su-phone" type="tel" placeholder="01000000000" maxlength="11">
+        <label>핸드폰번호 (아이디) <span style="color:#aaa;font-size:12px">숫자만 입력</span></label>
+        <input id="su-phone" type="tel" placeholder="01000000000" maxlength="11">
         <label>비밀번호 <span style="color:#aaa;font-size:12px">(영문+숫자 8자 이상)</span></label>
         <input id="su-pw" type="password" placeholder="비밀번호">
         <label>비밀번호 확인</label><input id="su-pw2" type="password" placeholder="비밀번호 확인">
@@ -257,7 +257,6 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   </div>
 </div>
 
-<!-- MODALS -->
 <div id="ov-mc" class="ov"><div class="modal">
   <h3 id="mc-t">센터 추가</h3><input type="hidden" id="mc-id">
   <label>센터 이름</label><input id="mc-name" type="text" placeholder="센터 이름">
@@ -336,6 +335,9 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 function pad(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 
+/* 전화번호 하이픈 제거 - 숫자만 추출 */
+function cleanPhone(p){ return p.replace(/[^0-9]/g,''); }
+
 function show(id){
   document.querySelectorAll('.pg').forEach(function(p){ p.classList.remove('on'); });
   document.getElementById(id).classList.add('on');
@@ -357,7 +359,7 @@ async function loadAll(){
 }
 
 async function doLogin(){
-  var id = document.getElementById('lid').value.trim();
+  var id = cleanPhone(document.getElementById('lid').value.trim());
   var pw = document.getElementById('lpw').value.trim();
   var err = document.getElementById('lerr');
   if(id === ADMIN_ID && pw === ADMIN_PW){
@@ -372,14 +374,14 @@ async function doLogin(){
 
 async function doSignup(){
   var name = document.getElementById('su-name').value.trim();
-  var phone = document.getElementById('su-phone').value.trim();
+  var phone = cleanPhone(document.getElementById('su-phone').value.trim());
   var pw = document.getElementById('su-pw').value;
   var pw2 = document.getElementById('su-pw2').value;
   var err = document.getElementById('su-err');
   var ok = document.getElementById('su-ok');
   err.style.display='none'; ok.style.display='none';
   if(!name){ err.textContent='이름을 입력하세요.'; err.style.display='block'; return; }
-  if(!/^01[0-9]{8,9}$/.test(phone)){ err.textContent='올바른 핸드폰번호를 입력하세요.'; err.style.display='block'; return; }
+  if(!/^01[0-9]{8,9}$/.test(phone)){ err.textContent='올바른 핸드폰번호를 입력하세요. (숫자만 입력)'; err.style.display='block'; return; }
   for(var i=0;i<members.length;i++){ if(members[i].phone===phone){ err.textContent='이미 가입된 번호입니다.'; err.style.display='block'; return; } }
   if(!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/.test(pw)){ err.textContent='비밀번호: 영문+숫자 조합 8자 이상'; err.style.display='block'; return; }
   if(pw!==pw2){ err.textContent='비밀번호가 일치하지 않습니다.'; err.style.display='block'; return; }
@@ -933,7 +935,6 @@ async function submitBook(){
   var uphone=isAdmin?ADMIN_ID:getUser().phone;
   var uid_val=isAdmin?'admin':getUser().id;
   var status=isAdmin?'confirmed':(getUser().tenancy?'confirmed':'pending');
-  var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===RID){ r=rooms[i]; break; } }
   var obj={id:uid(),rid:RID,cid:CID,uid:uid_val,uname:uname,uphone:uphone,date:SDATE,s:SSLOTS[0],e:endOf(SSLOTS),slots:SSLOTS.slice(),status:status};
   var res = await sb.from('bookings').insert(obj);
   if(res.error){ alert('오류: '+res.error.message); return; }
@@ -946,7 +947,6 @@ async function submitBook(){
 
 document.getElementById('book-btn').addEventListener('click', openBconfirm);
 
-// 초기 로딩
 loadAll().then(function(){ show('pg-login'); });
 </script>
 </body>
