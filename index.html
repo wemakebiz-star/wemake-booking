@@ -339,10 +339,17 @@ function closeOv(k){ document.getElementById('ov-'+k).classList.remove('on'); }
 function showToast(msg, color){
   var t=document.getElementById('toast');
   t.className='toast'+(color?' '+color:'');
-  t.innerHTML=msg+'<button class="toast-confirm" onclick="dismissToast()">확인</button>';
+  var confirmFn = (ME&&ME.role==='admin') ? 'goToPendingTabFromToast()' : 'dismissToast()';
+  t.innerHTML=msg+'<button class="toast-confirm" onclick="'+confirmFn+'">확인</button>';
   t.classList.add('show');
 }
 function dismissToast(){ document.getElementById('toast').classList.remove('show'); }
+function goToPendingTab(){
+  show('pg-admin'); aTab(2); ABTAB=0;
+  for(var i=0;i<3;i++) document.getElementById('bt'+i).classList.toggle('on',i===0);
+  renderAdminBooks();
+}
+function goToPendingTabFromToast(){ dismissToast(); if(ME&&ME.role==='admin') goToPendingTab(); }
 
 /* ── 폴링 ── */
 function startPolling(){ stopPolling(); pollTimer=setInterval(function(){ if(ME) pollBookings(); },POLL_INTERVAL); }
@@ -452,7 +459,7 @@ function renderAdmin(){
   var msgs=[];
   if(pending>0) msgs.push('승인 대기 <strong>'+pending+'건</strong>');
   if(cancelReq>0) msgs.push('취소 요청 <strong>'+cancelReq+'건</strong>');
-  b.innerHTML=msgs.length?'<div class="abanner">🔔 '+msgs.join(' | ')+' 있습니다.</div>':'';
+  b.innerHTML=msgs.length?'<div class="abanner" style="cursor:pointer" onclick="goToPendingTab()">🔔 '+msgs.join(' | ')+' 있습니다. <span style="font-size:12px;text-decoration:underline">바로가기 →</span></div>':'';
   renderCenters(); renderMembers(); renderAdminBooks(); renderAdminBookCenters();
 }
 
