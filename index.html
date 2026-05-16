@@ -29,6 +29,8 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .bb{background:#E6F1FB;color:#0C447C}.bg{background:#EAF3DE;color:#27500A}
 .ba{background:#FAEEDA;color:#633806}.bgr{background:#f0f2f8;color:#666}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid #e8e9ef}
+/* 관리자 고정 탭 */
+.admin-tabs-fixed{position:sticky;top:0;z-index:50;background:#f5f6fa;padding:.5rem 0 .75rem;margin-bottom:.5rem}
 .tabs{display:flex;gap:6px;margin-bottom:1.25rem}
 .tab{flex:1;padding:9px;border-radius:8px;border:1px solid #d0d3e0;background:#fff;color:#666;cursor:pointer;font-size:13px;font-weight:500;text-align:center;transition:all .15s}
 .tab.on{background:#185FA5;color:#fff;border-color:#185FA5}
@@ -48,6 +50,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .slot.pend{background:#FAEEDA;color:#633806;border-color:#FAC775;cursor:not-allowed}
 .slot.past-time{background:#f0f2f8;color:#bbb;border-color:#e8e9ef;cursor:not-allowed}
 .slot.pick{background:#185FA5;color:#fff;border-color:#185FA5}
+.slot.mine{background:#0C447C;color:#fff;border-color:#0C447C;cursor:not-allowed}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:60px 1rem 1rem}
 .ov.on{display:flex}
 .modal{background:#fff;border-radius:14px;border:1px solid #e8e9ef;padding:1.5rem;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
@@ -66,18 +69,18 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .logo-icon{font-size:48px;margin-bottom:8px}
 .logo-title{font-size:22px;font-weight:700;color:#185FA5}
 .logo-sub{font-size:13px;color:#888;margin-top:4px}
-/* 알림 토스트 - 확인버튼 포함 */
 .toast{position:fixed;top:20px;right:20px;background:#185FA5;color:#fff;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.25);transform:translateX(120%);transition:transform .3s ease;max-width:300px;line-height:1.5}
 .toast.show{transform:translateX(0)}
 .toast-confirm{display:block;margin-top:10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 12px;font-size:13px;cursor:pointer;width:100%;text-align:center}
 .toast-confirm:hover{background:rgba(255,255,255,.3)}
-/* 승인 완료 토스트는 초록색 */
 .toast.green{background:#3B6D11}
+.toast.red{background:#A32D2D}
+.book-item{cursor:pointer;transition:background .12s}
+.book-item:hover{background:#f0f8ff}
 @media(max-width:480px){.g2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.tab{font-size:12px;padding:7px}.toast{top:10px;right:10px;left:10px;max-width:none}}
 </style>
 </head>
 <body>
-
 <div id="toast" class="toast"></div>
 
 <div id="pg-loading" class="pg on">
@@ -132,6 +135,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   </div>
 </div>
 
+<!-- 관리자 -->
 <div id="pg-admin" class="pg">
   <div class="wrap">
     <div class="topbar">
@@ -139,16 +143,18 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
       <button class="btn sm" onclick="logout()">로그아웃</button>
     </div>
     <div id="pending-banner"></div>
-    <div class="tabs">
-      <button class="tab on" id="at0" onclick="aTab(0)">🏢 센터</button>
-      <button class="tab" id="at1" onclick="aTab(1)">👥 회원</button>
-      <button class="tab" id="at2" onclick="aTab(2)">📋 예약관리</button>
-      <button class="tab" id="at3" onclick="aTab(3)">📅 예약하기</button>
+    <div class="admin-tabs-fixed">
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab on" id="at0" onclick="aTab(0)">🏢 센터</button>
+        <button class="tab" id="at1" onclick="aTab(1)">👥 회원</button>
+        <button class="tab" id="at2" onclick="aTab(2)">📋 예약관리</button>
+        <button class="tab" id="at3" onclick="aTab(3)">📅 예약하기</button>
+      </div>
     </div>
     <div id="at-0"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bp sm" onclick="openMC(null)">+ 센터 추가</button></div><div id="list-centers"></div></div>
     <div id="at-1" style="display:none"><div id="list-members"></div></div>
     <div id="at-2" style="display:none">
-      <div class="tabs"><button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button><button class="tab" id="bt1" onclick="bTab(1)">확정예약</button></div>
+      <div class="tabs"><button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button><button class="tab" id="bt1" onclick="bTab(1)">확정예약</button><button class="tab" id="bt2" onclick="bTab(2)">취소요청</button></div>
       <div id="list-bookings"></div>
     </div>
     <div id="at-3" style="display:none"><div id="admin-book-centers"></div></div>
@@ -158,6 +164,15 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <div id="pg-arooms" class="pg">
   <div class="wrap">
     <div class="topbar"><button class="btn sm" onclick="show('pg-admin')">← 관리자</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
+    <!-- 관리자 고정 탭 -->
+    <div class="admin-tabs-fixed">
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 센터</button>
+        <button class="tab" onclick="show('pg-admin');aTab(1)">👥 회원</button>
+        <button class="tab" onclick="show('pg-admin');aTab(2)">📋 예약관리</button>
+        <button class="tab" onclick="show('pg-admin');aTab(3)">📅 예약하기</button>
+      </div>
+    </div>
     <div id="aroom-cinfo" class="card"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 10px"><span style="font-size:15px;font-weight:600">회의실 목록</span><button class="btn bp sm" onclick="openMR(null)">+ 회의실 추가</button></div>
     <div id="list-arooms" class="g2"></div>
@@ -167,15 +182,30 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <div id="pg-admin-urooms" class="pg">
   <div class="wrap">
     <div class="topbar"><button class="btn sm" onclick="show('pg-admin');aTab(3)">← 센터 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
+    <div class="admin-tabs-fixed">
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 센터</button>
+        <button class="tab" onclick="show('pg-admin');aTab(1)">👥 회원</button>
+        <button class="tab" onclick="show('pg-admin');aTab(2)">📋 예약관리</button>
+        <button class="tab on" onclick="show('pg-admin');aTab(3)">📅 예약하기</button>
+      </div>
+    </div>
     <div id="adm-uroom-cinfo" class="card" style="margin-bottom:1rem"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:10px">회의실 선택</div>
     <div id="list-adm-urooms" class="g2"></div>
   </div>
 </div>
 
+<!-- 예약 페이지 (이용자/관리자 공용) -->
 <div id="pg-book" class="pg">
   <div class="wrap">
-    <div class="topbar"><button class="btn sm" id="book-back">← 회의실 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
+    <div class="topbar">
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" id="book-back">← 회의실 목록</button>
+        <button class="btn sm" id="book-home">🏠 홈</button>
+      </div>
+      <button class="btn sm" onclick="logout()">로그아웃</button>
+    </div>
     <div id="book-rinfo" class="card" style="margin-bottom:1rem"></div>
     <div class="g2" style="align-items:start">
       <div>
@@ -191,6 +221,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
         <div style="margin-top:8px;font-size:12px;color:#888;display:flex;gap:12px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#FCEBEB;border-radius:2px;margin-right:3px"></span>예약됨</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#FAEEDA;border-radius:2px;margin-right:3px"></span>승인대기</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#0C447C;border-radius:2px;margin-right:3px"></span>내 예약</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#f0f2f8;border-radius:2px;margin-right:3px"></span>지난시간</span>
         </div>
       </div>
@@ -208,6 +239,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   </div>
 </div>
 
+<!-- 이용자 -->
 <div id="pg-user" class="pg">
   <div class="wrap">
     <div class="topbar">
@@ -291,118 +323,84 @@ var ME = null, CID = null, RID = null;
 var CY, CM, SDATE = null, SSLOTS = [];
 var ABTAB = 0, UBTAB = 0, BOOK_BACK_PAGE = 'pg-urooms';
 var centers = [], rooms = [], members = [], bookings = [];
-var realtimeChannel = null;
-var pollTimer = null;
-var POLL_INTERVAL = 5000; /* 5초마다 DB 확인 */
+var realtimeChannel = null, pollTimer = null;
+var POLL_INTERVAL = 5000;
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function pad(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function cleanPhone(p){ return p.replace(/[^0-9]/g,''); }
+function fmtDt(iso){ if(!iso) return ''; var d=new Date(iso); return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
 
 function show(id){ document.querySelectorAll('.pg').forEach(function(p){ p.classList.remove('on'); }); document.getElementById(id).classList.add('on'); }
 function openOv(k){ document.getElementById('ov-'+k).classList.add('on'); }
 function closeOv(k){ document.getElementById('ov-'+k).classList.remove('on'); }
 
-/* ── 토스트: 확인 버튼 누를 때까지 유지 ── */
-function showToast(msg, isGreen, onConfirm){
-  var t = document.getElementById('toast');
-  t.className = 'toast' + (isGreen ? ' green' : '');
-  t.innerHTML = msg + '<button class="toast-confirm" onclick="dismissToast()">확인</button>';
+function showToast(msg, color){
+  var t=document.getElementById('toast');
+  t.className='toast'+(color?' '+color:'');
+  t.innerHTML=msg+'<button class="toast-confirm" onclick="dismissToast()">확인</button>';
   t.classList.add('show');
-  if(onConfirm) t._onConfirm = onConfirm;
-  else t._onConfirm = null;
 }
-function dismissToast(){
-  var t = document.getElementById('toast');
-  t.classList.remove('show');
-  if(t._onConfirm) t._onConfirm();
-}
+function dismissToast(){ document.getElementById('toast').classList.remove('show'); }
 
-/* ── 폴링: 5초마다 bookings DB를 확인해서 변경사항 반영 ── */
-function startPolling(){
-  stopPolling();
-  pollTimer = setInterval(function(){
-    if(!ME) return;
-    pollBookings();
-  }, POLL_INTERVAL);
-}
-function stopPolling(){
-  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
-}
+/* ── 폴링 ── */
+function startPolling(){ stopPolling(); pollTimer=setInterval(function(){ if(ME) pollBookings(); },POLL_INTERVAL); }
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
 
 async function pollBookings(){
   try{
-    var res = await sb.from('bookings').select('*').order('created_at');
+    var res=await sb.from('bookings').select('*').order('created_at');
     if(!res.data) return;
-    var newBookings = res.data;
-
-    if(ME && ME.role === 'user'){
-      /* 내 예약 중 pending → confirmed 로 바뀐 것 감지 */
-      for(var i=0;i<newBookings.length;i++){
-        var nb = newBookings[i];
-        if(nb.uid !== ME.uid) continue;
-        if(nb.status !== 'confirmed') continue;
-        /* 기존에 pending 이었던 것 찾기 */
+    var nb=res.data;
+    if(ME && ME.role==='user'){
+      for(var i=0;i<nb.length;i++){
+        var b=nb[i]; if(b.uid!==ME.uid) continue;
         for(var j=0;j<bookings.length;j++){
-          if(bookings[j].id === nb.id && bookings[j].status === 'pending'){
-            /* 새로 승인된 예약 발견! */
-            showToast('✅ 예약이 승인되었습니다!<br><strong>'+nb.date+' '+nb.s+'~'+nb.e+'</strong>', true, null);
-            break;
+          if(bookings[j].id===b.id && bookings[j].status==='pending' && b.status==='confirmed'){
+            showToast('✅ 예약이 승인되었습니다!<br><strong>'+b.date+' '+b.s+'~'+b.e+'</strong>','green'); break;
+          }
+          if(bookings[j].id===b.id && bookings[j].status==='cancel_request' && b.status===undefined){
+            showToast('🗑️ 취소 요청이 처리되었습니다.','red'); break;
           }
         }
       }
-      /* 배열 업데이트 */
-      bookings = newBookings;
-      /* 내 예약 탭이 열려있으면 갱신 */
-      var ut1 = document.getElementById('ut-1');
+      /* 삭제된 취소요청 감지 */
+      for(var j=0;j<bookings.length;j++){
+        if(bookings[j].uid!==ME.uid || bookings[j].status!=='cancel_request') continue;
+        var found=false;
+        for(var i=0;i<nb.length;i++){ if(nb[i].id===bookings[j].id){ found=true; break; } }
+        if(!found) showToast('🗑️ 예약 취소가 완료되었습니다.<br><strong>'+bookings[j].date+' '+bookings[j].s+'~'+bookings[j].e+'</strong>','red');
+      }
+      bookings=nb;
+      var ut1=document.getElementById('ut-1');
       if(ut1 && ut1.style.display==='block') renderMyBookings();
-      /* 예약 슬롯 화면이 열려있으면 갱신 */
       if(SDATE && RID) renderSlots();
-
-    } else if(ME && ME.role === 'admin'){
-      /* 관리자: 새 pending 예약 감지 */
-      for(var i=0;i<newBookings.length;i++){
-        var nb = newBookings[i];
-        if(nb.status !== 'pending') continue;
-        var found = false;
-        for(var j=0;j<bookings.length;j++){
-          if(bookings[j].id === nb.id){ found=true; break; }
-        }
+    } else if(ME && ME.role==='admin'){
+      for(var i=0;i<nb.length;i++){
+        var b=nb[i]; if(b.status!=='pending' && b.status!=='cancel_request') continue;
+        var found=false;
+        for(var j=0;j<bookings.length;j++){ if(bookings[j].id===b.id){ found=true; break; } }
         if(!found){
-          showToast('🔔 새 승인요청!<br><strong>'+nb.uname+'</strong><br>'+nb.date+' '+nb.s+'~'+nb.e, false, null);
+          if(b.status==='pending') showToast('🔔 새 승인요청!<br><strong>'+b.uname+'</strong><br>'+b.date+' '+b.s+'~'+b.e,'');
+          if(b.status==='cancel_request') showToast('⚠️ 취소요청!<br><strong>'+b.uname+'</strong><br>'+b.date+' '+b.s+'~'+b.e,'');
         }
       }
-      bookings = newBookings;
-      renderAdmin();
+      bookings=nb; renderAdmin();
     }
-  }catch(e){ console.warn('poll error', e); }
+  }catch(e){ console.warn('poll error',e); }
 }
 
-/* ── Realtime 구독 (폴링 보조용) ── */
 function startRealtime(){
   if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
-  realtimeChannel = sb.channel('wemake-rt-'+Date.now())
-    .on('postgres_changes',{event:'*',schema:'public',table:'bookings'}, function(payload){
-      /* Realtime 이벤트 오면 즉시 폴링 실행 */
-      pollBookings();
-    })
+  realtimeChannel=sb.channel('wemake-rt-'+Date.now())
+    .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},function(){ pollBookings(); })
     .subscribe();
 }
-function stopRealtime(){
-  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
-}
+function stopRealtime(){ if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; } }
 
-function goLogin(){
-  document.getElementById('lid').value=''; document.getElementById('lpw').value='';
-  document.getElementById('lerr').style.display='none'; show('pg-login');
-}
-function goSignup(){
-  document.getElementById('su-name').value=''; document.getElementById('su-phone').value='';
-  document.getElementById('su-pw').value=''; document.getElementById('su-pw2').value='';
-  document.getElementById('su-err').style.display='none'; document.getElementById('su-ok').style.display='none';
-  show('pg-signup');
-}
+function goLogin(){ document.getElementById('lid').value=''; document.getElementById('lpw').value=''; document.getElementById('lerr').style.display='none'; show('pg-login'); }
+function goSignup(){ ['su-name','su-phone','su-pw','su-pw2'].forEach(function(i){ document.getElementById(i).value=''; }); document.getElementById('su-err').style.display='none'; document.getElementById('su-ok').style.display='none'; show('pg-signup'); }
 
 async function loadAll(){
   try{
@@ -417,12 +415,8 @@ async function doLogin(){
   var id=cleanPhone(document.getElementById('lid').value.trim());
   var pw=document.getElementById('lpw').value.trim();
   var err=document.getElementById('lerr');
-  if(id===ADMIN_ID && pw===ADMIN_PW){
-    ME={role:'admin'}; err.style.display='none';
-    await loadAll(); startRealtime(); startPolling(); renderAdmin(); show('pg-admin'); return;
-  }
-  var u=null;
-  for(var i=0;i<members.length;i++){ if(members[i].phone===id && members[i].pw===pw){ u=members[i]; break; } }
+  if(id===ADMIN_ID&&pw===ADMIN_PW){ ME={role:'admin'}; err.style.display='none'; await loadAll(); startRealtime(); startPolling(); renderAdmin(); show('pg-admin'); return; }
+  var u=null; for(var i=0;i<members.length;i++){ if(members[i].phone===id&&members[i].pw===pw){ u=members[i]; break; } }
   if(u){ ME={role:'user',uid:u.id}; err.style.display='none'; startRealtime(); startPolling(); renderUser(); show('pg-user'); }
   else { err.style.display='block'; }
 }
@@ -442,22 +436,28 @@ async function doSignup(){
   var res=await sb.from('members').insert(newM);
   if(res.error){ err.textContent='오류: '+res.error.message; err.style.display='block'; return; }
   members.push(newM); ok.style.display='block';
-  document.getElementById('su-name').value=''; document.getElementById('su-phone').value='';
-  document.getElementById('su-pw').value=''; document.getElementById('su-pw2').value='';
+  ['su-name','su-phone','su-pw','su-pw2'].forEach(function(i){ document.getElementById(i).value=''; });
   setTimeout(function(){ goLogin(); },1500);
 }
 
 function logout(){ ME=null; SSLOTS=[]; SDATE=null; stopRealtime(); stopPolling(); goLogin(); }
 
 function renderAdmin(){
-  var pending=0; for(var i=0;i<bookings.length;i++){ if(bookings[i].status==='pending') pending++; }
+  var pending=0, cancelReq=0;
+  for(var i=0;i<bookings.length;i++){
+    if(bookings[i].status==='pending') pending++;
+    if(bookings[i].status==='cancel_request') cancelReq++;
+  }
   var b=document.getElementById('pending-banner');
-  b.innerHTML=pending>0?'<div class="abanner">🔔 승인 대기 예약 <strong>'+pending+'건</strong> 있습니다.</div>':'';
+  var msgs=[];
+  if(pending>0) msgs.push('승인 대기 <strong>'+pending+'건</strong>');
+  if(cancelReq>0) msgs.push('취소 요청 <strong>'+cancelReq+'건</strong>');
+  b.innerHTML=msgs.length?'<div class="abanner">🔔 '+msgs.join(' | ')+' 있습니다.</div>':'';
   renderCenters(); renderMembers(); renderAdminBooks(); renderAdminBookCenters();
 }
 
 function aTab(n){ for(var i=0;i<4;i++){ document.getElementById('at'+i).classList.toggle('on',i===n); document.getElementById('at-'+i).style.display=i===n?'block':'none'; } }
-function bTab(n){ ABTAB=n; for(var i=0;i<2;i++) document.getElementById('bt'+i).classList.toggle('on',i===n); renderAdminBooks(); }
+function bTab(n){ ABTAB=n; for(var i=0;i<3;i++) document.getElementById('bt'+i).classList.toggle('on',i===n); renderAdminBooks(); }
 
 function renderCenters(){
   var el=document.getElementById('list-centers');
@@ -487,8 +487,7 @@ function renderArooms(){
     var r=rs[i];
     h+='<div class="card" style="margin-bottom:0"><div style="display:flex;align-items:flex-start;justify-content:space-between">'
       +'<div style="font-weight:600;font-size:15px">'+r.name+'</div>'
-      +'<div style="display:flex;gap:5px"><button class="btn sm" onclick="openMR(\''+r.id+'\')">✏️</button>'
-      +'<button class="btn bd sm" onclick="delRoom(\''+r.id+'\')">🗑️</button></div></div>'
+      +'<div style="display:flex;gap:5px"><button class="btn sm" onclick="openMR(\''+r.id+'\')">✏️</button><button class="btn bd sm" onclick="delRoom(\''+r.id+'\')">🗑️</button></div></div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">'
       +'<span class="bge bb">'+r.cap+'인</span><span class="bge '+(r.proj?'bg':'bgr')+'">'+(r.proj?'프로젝터':'프로젝터 없음')+'</span>'
       +'<span class="bge ba">'+r.price.toLocaleString()+'원/h</span></div></div>';
@@ -568,12 +567,15 @@ async function delMember(id){
   renderMembers();
 }
 function getMemberCompany(uid){ for(var i=0;i<members.length;i++){ if(members[i].id===uid) return members[i].company||''; } return ''; }
+function getMemberTenancy(uid){ for(var i=0;i<members.length;i++){ if(members[i].id===uid) return members[i].tenancy||''; } return ''; }
 
 function renderAdminBooks(){
   var el=document.getElementById('list-bookings');
-  var status=ABTAB===0?'pending':'confirmed';
+  var statusMap=['pending','confirmed','cancel_request'];
+  var status=statusMap[ABTAB];
   var list=[]; for(var i=0;i<bookings.length;i++){ if(bookings[i].status===status) list.push(bookings[i]); }
-  if(!list.length){ el.innerHTML='<p style="color:#888;font-size:14px;padding:.5rem 0">'+(ABTAB===0?'승인 대기 없음':'확정된 예약 없음')+'</p>'; return; }
+  var emptyMsg=['승인 대기 없음','확정된 예약 없음','취소 요청 없음'];
+  if(!list.length){ el.innerHTML='<p style="color:#888;font-size:14px;padding:.5rem 0">'+emptyMsg[ABTAB]+'</p>'; return; }
   var h='<div class="card" style="padding:.25rem 1.25rem">';
   for(var i=0;i<list.length;i++){
     var bk=list[i]; var rn='?',cn='?';
@@ -581,18 +583,24 @@ function renderAdminBooks(){
     for(var j=0;j<centers.length;j++){ if(centers[j].id===bk.cid){ cn=centers[j].name; break; } }
     var company=getMemberCompany(bk.uid);
     var bookerLine=bk.uname+' ('+(bk.uphone||'')+')'+(company?' / '+company:'');
+    var statusBadge = bk.status==='pending'?'<span class="bge ba">승인대기</span>'
+      :bk.status==='confirmed'?'<span class="bge bg">확정</span>'
+      :'<span class="bge" style="background:#FCEBEB;color:#A32D2D">취소요청</span>';
     h+='<div class="brow"><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:6px">'
       +'<div><div style="font-weight:600;font-size:14px">'+cn+' — '+rn+'</div>'
-      +'<div style="font-size:13px;color:#666;margin-top:2px">'+bk.date+' '+bk.s+'~'+bk.e+'</div>'
+      +'<div style="font-size:13px;color:#666;margin-top:2px">📅 '+bk.date+' '+bk.s+'~'+bk.e+'</div>'
+      +'<div style="font-size:12px;color:#aaa;">신청: '+fmtDt(bk.created_at)+'</div>'
       +'<div style="font-size:13px;color:#666">예약자: '+bookerLine+'</div>'
-      +(bk.status==='pending'?'<span class="bge ba" style="margin-top:4px">승인대기</span>':'<span class="bge bg" style="margin-top:4px">확정</span>')
+      +'<div style="margin-top:4px">'+statusBadge+'</div>'
       +'</div><div style="display:flex;gap:5px;flex-wrap:wrap">'
       +(bk.status==='pending'?'<button class="btn bs xs" onclick="approveBook(\''+bk.id+'\')">✓ 승인</button>':'')
       +(bk.status==='confirmed'?'<button class="btn bw xs" onclick="openBedit(\''+bk.id+'\')">✏️ 수정</button>':'')
-      +'<button class="btn bd xs" onclick="deleteBook(\''+bk.id+'\')">🗑️ 삭제</button></div></div></div>';
+      +'<button class="btn bd xs" onclick="deleteBook(\''+bk.id+'\')">🗑️ 삭제</button>'
+      +'</div></div></div>';
   }
   h+='</div>'; el.innerHTML=h;
 }
+
 async function approveBook(id){
   var res=await sb.from('bookings').update({status:'confirmed'}).eq('id',id);
   if(res.error){ alert('오류: '+res.error.message); return; }
@@ -602,8 +610,7 @@ async function approveBook(id){
 async function deleteBook(id){
   if(!confirm('예약을 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('id',id);
-  var f=[]; for(var i=0;i<bookings.length;i++){ if(bookings[i].id!==id) f.push(bookings[i]); } bookings=f;
-  renderAdmin();
+  bookings=bookings.filter(function(b){return b.id!==id;}); renderAdmin();
 }
 function openBedit(id){
   var bk=null; for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bk=bookings[i]; break; } }
@@ -633,6 +640,7 @@ async function saveBedit(){
   bk.date=date; bk.s=s; bk.e=e; bk.slots=ns;
   closeOv('bedit'); renderAdmin();
 }
+
 function renderAdminBookCenters(){
   var el=document.getElementById('admin-book-centers');
   if(!centers.length){ el.innerHTML='<p style="color:#888;font-size:14px;padding:.5rem 0">등록된 센터가 없습니다.</p>'; return; }
@@ -663,9 +671,12 @@ function openAdmUrooms(cid){
   }
   el.innerHTML=h; show('pg-admin-urooms');
 }
+
+/* ── 이용자 ── */
 function getUser(){ for(var i=0;i<members.length;i++){ if(members[i].id===ME.uid) return members[i]; } return null; }
 function uTab(n){ for(var i=0;i<2;i++){ document.getElementById('ut'+i).classList.toggle('on',i===n); document.getElementById('ut-'+i).style.display=i===n?'block':'none'; } if(n===1) renderMyBookings(); }
 function ubTab(n){ UBTAB=n; for(var i=0;i<2;i++) document.getElementById('ubt'+i).classList.toggle('on',i===n); renderMyBookings(); }
+
 function renderUser(){
   var u=getUser();
   document.getElementById('uwelcome').textContent=u.name+'님 환영합니다'+(u.tenancy?' ('+u.tenancy+')':'');
@@ -705,29 +716,109 @@ function openUrooms(cid){
   }
   el.innerHTML=h; show('pg-urooms');
 }
+
+/* 예약에서 캘린더로 이동 */
+function goToBooking(bk){
+  RID=bk.rid; CID=bk.cid; SDATE=null; SSLOTS=[];
+  BOOK_BACK_PAGE='pg-user';
+  var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===bk.rid){ r=rooms[i]; break; } }
+  if(!r) return;
+  document.getElementById('book-rinfo').innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:600;font-size:16px">'+r.name+'</div><div style="display:flex;gap:5px"><span class="bge bb">'+r.cap+'인</span><span class="bge ba">'+r.price.toLocaleString()+'원/h</span></div></div>';
+  document.getElementById('book-back').onclick=function(){ show('pg-user'); };
+  document.getElementById('book-home').onclick=function(){ show('pg-user'); };
+  document.getElementById('book-btn').textContent='예약하기';
+  var parts=bk.date.split('-');
+  var now=new Date(); CY=parseInt(parts[0]); CM=parseInt(parts[1])-1;
+  SDATE=bk.date;
+  renderCal();
+  var p=bk.date.split('-');
+  document.getElementById('slot-lbl').textContent=p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일';
+  renderSlots();
+  document.getElementById('selbox').style.display='none';
+  show('pg-book');
+}
+
 function renderMyBookings(){
   var el=document.getElementById('my-bookings');
-  var status=UBTAB===0?'confirmed':'pending';
-  var list=[]; for(var i=0;i<bookings.length;i++){ if(bookings[i].uid===ME.uid&&bookings[i].status===status) list.push(bookings[i]); }
+  var statusList=UBTAB===0?['confirmed']:['pending','cancel_request'];
+  var list=[];
+  for(var i=0;i<bookings.length;i++){
+    var b=bookings[i]; if(b.uid!==ME.uid) continue;
+    for(var j=0;j<statusList.length;j++){ if(b.status===statusList[j]){ list.push(b); break; } }
+  }
   if(!list.length){ el.innerHTML='<p style="color:#888;font-size:14px;padding:.5rem 0">'+(UBTAB===0?'확정된 예약이 없습니다.':'승인 대기 중인 예약이 없습니다.')+'</p>'; return; }
+  var u=getUser();
   var h='<div class="card" style="padding:.25rem 1.25rem">';
   for(var i=0;i<list.length;i++){
     var bk=list[i]; var rn='?',cn='?';
     for(var j=0;j<rooms.length;j++){ if(rooms[j].id===bk.rid){ rn=rooms[j].name; break; } }
     for(var j=0;j<centers.length;j++){ if(centers[j].id===bk.cid){ cn=centers[j].name; break; } }
-    h+='<div class="brow"><div style="font-weight:600;font-size:14px">'+cn+' — '+rn+'</div>'
-      +'<div style="font-size:13px;color:#666;margin-top:2px">'+bk.date+' '+bk.s+'~'+bk.e+'</div>'
-      +(bk.status==='confirmed'?'<span class="bge bg" style="margin-top:4px">✅ 확정</span>':'<span class="bge ba" style="margin-top:4px">⏳ 승인 대기</span>')
+    var now=new Date();
+    var bookStart=new Date(bk.date+'T'+bk.s+':00');
+    var canCancel=false, cancelBtn='';
+    if(bk.status==='confirmed'){
+      if(u && u.tenancy){
+        canCancel=now<bookStart;
+        if(canCancel) cancelBtn='<button class="btn bd xs" style="margin-top:6px" onclick="cancelBooking(\''+bk.id+'\',\'tenancy\')">취소</button>';
+      } else {
+        var diff=(bookStart-now)/3600000;
+        canCancel=diff>12;
+        if(canCancel) cancelBtn='<button class="btn bd xs" style="margin-top:6px" onclick="cancelBooking(\''+bk.id+'\',\'normal\')">취소 요청</button>';
+        else if(diff>0) cancelBtn='<span style="font-size:12px;color:#aaa;display:block;margin-top:4px">시작 12시간 이내 취소불가</span>';
+      }
+    } else if(bk.status==='pending'){
+      cancelBtn='<button class="btn bd xs" style="margin-top:6px" onclick="cancelPending(\''+bk.id+'\')">승인요청 취소</button>';
+    } else if(bk.status==='cancel_request'){
+      cancelBtn='<span style="font-size:12px;color:#A32D2D;display:block;margin-top:4px">취소 처리 대기중...</span>';
+    }
+    var statusBadge=bk.status==='confirmed'?'<span class="bge bg">✅ 확정</span>'
+      :bk.status==='cancel_request'?'<span class="bge" style="background:#FCEBEB;color:#A32D2D">취소요청</span>'
+      :'<span class="bge ba">⏳ 승인 대기</span>';
+    h+='<div class="brow book-item" onclick="goToBooking('+JSON.stringify(bk).replace(/"/g,"'")+' )">'
+      +'<div style="font-weight:600;font-size:14px">'+cn+' — '+rn+'</div>'
+      +'<div style="font-size:13px;color:#666;margin-top:2px">📅 '+bk.date+' '+bk.s+'~'+bk.e+'</div>'
+      +'<div style="font-size:12px;color:#aaa;">신청: '+fmtDt(bk.created_at)+'</div>'
+      +'<div style="margin-top:4px">'+statusBadge+'</div>'
+      +cancelBtn
       +'</div>';
   }
   h+='</div>'; el.innerHTML=h;
 }
+
+async function cancelBooking(id, type){
+  var bk=null; for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bk=bookings[i]; break; } }
+  if(!bk) return;
+  if(type==='tenancy'){
+    if(!confirm('예약을 취소할까요?')) return;
+    await sb.from('bookings').delete().eq('id',id);
+    bookings=bookings.filter(function(b){return b.id!==id;});
+    showToast('✅ 예약이 취소되었습니다.','green');
+    renderMyBookings();
+  } else {
+    if(!confirm('취소를 관리자에게 요청할까요?')) return;
+    await sb.from('bookings').update({status:'cancel_request'}).eq('id',id);
+    for(var i=0;i<bookings.length;i++){ if(bookings[i].id===id){ bookings[i].status='cancel_request'; break; } }
+    showToast('📨 취소 요청이 전달되었습니다.','');
+    renderMyBookings();
+  }
+}
+
+async function cancelPending(id){
+  if(!confirm('승인 요청을 취소할까요?')) return;
+  await sb.from('bookings').delete().eq('id',id);
+  bookings=bookings.filter(function(b){return b.id!==id;});
+  showToast('✅ 승인 요청이 취소되었습니다.','green');
+  renderMyBookings();
+}
+
+/* ── 예약 페이지 ── */
 function openBook(rid, caller){
   RID=rid; SDATE=null; SSLOTS=[];
   BOOK_BACK_PAGE=caller==='admin'?'pg-admin-urooms':'pg-urooms';
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===rid){ r=rooms[i]; break; } }
   document.getElementById('book-rinfo').innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:600;font-size:16px">'+r.name+'</div><div style="display:flex;gap:5px"><span class="bge bb">'+r.cap+'인</span><span class="bge ba">'+r.price.toLocaleString()+'원/h</span></div></div>';
   document.getElementById('book-back').onclick=function(){ show(BOOK_BACK_PAGE); };
+  document.getElementById('book-home').onclick=function(){ if(ME.role==='admin') show('pg-admin'); else show('pg-user'); };
   if(ME.role==='admin'){ document.getElementById('book-btn').textContent='예약 확정'; }
   else { var u=getUser(); document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청'; }
   var now=new Date(); CY=now.getFullYear(); CM=now.getMonth();
@@ -737,6 +828,7 @@ function openBook(rid, caller){
   document.getElementById('selbox').style.display='none';
   show('pg-book');
 }
+
 function mv(d){ CM+=d; if(CM>11){CM=0;CY++;} if(CM<0){CM=11;CY--;} renderCal(); }
 function renderCal(){
   document.getElementById('cal-lbl').textContent=CY+'년 '+(CM+1)+'월';
@@ -759,12 +851,17 @@ function selDay(s){
   document.getElementById('slot-lbl').textContent=p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일';
   renderSlots(); document.getElementById('selbox').style.display='none';
 }
+
 function renderSlots(){
-  var conf=[], pend=[];
+  var conf=[], pend=[], mine=[];
+  var myUid=ME&&ME.uid?ME.uid:null;
   for(var i=0;i<bookings.length;i++){
     var b=bookings[i]; if(b.rid!==RID||b.date!==SDATE) continue;
     var sl=b.slots||[];
-    if(b.status==='confirmed'){ for(var j=0;j<sl.length;j++) conf.push(sl[j]); }
+    if(b.status==='confirmed'||b.status==='cancel_request'){
+      if(myUid && b.uid===myUid){ for(var j=0;j<sl.length;j++) mine.push(sl[j]); }
+      else { for(var j=0;j<sl.length;j++) conf.push(sl[j]); }
+    }
     else if(b.status==='pending'){ for(var j=0;j<sl.length;j++) pend.push(sl[j]); }
   }
   var now=new Date(), todayStr=dateStr(now), nowMin=now.getHours()*60+now.getMinutes();
@@ -774,22 +871,51 @@ function renderSlots(){
       var sl=pad(hr)+':'+pad(mn);
       var nh=mn===30?hr+1:hr, nm=mn===30?0:30, en=pad(nh)+':'+pad(nm);
       var isC=conf.indexOf(sl)>=0, isP=pend.indexOf(sl)>=0, isPk=SSLOTS.indexOf(sl)>=0;
+      var isM=mine.indexOf(sl)>=0;
       var isPast=(SDATE===todayStr&&(hr*60+mn)<=nowMin);
       var cls, cl;
-      if(isC){ cls='slot taken'; cl=''; }
+      if(isM){ cls='slot mine'; cl=''; }
+      else if(isC){ cls='slot taken'; cl=''; }
       else if(isP){ cls='slot pend'; cl=''; }
       else if(isPast){ cls='slot past-time'; cl=''; }
       else if(isPk){ cls='slot pick'; cl='onclick="toggleSlot(\''+sl+'\')"'; }
       else { cls='slot free'; cl='onclick="toggleSlot(\''+sl+'\')"'; }
       h+='<div class="'+cls+'" '+cl+'>'+sl+'~'+en
-        +(isC?'<br><span style="font-size:10px">예약됨</span>'
+        +(isM?'<br><span style="font-size:10px">내예약</span>'
+        :isC?'<br><span style="font-size:10px">예약됨</span>'
         :isP?'<br><span style="font-size:10px">대기중</span>'
         :isPast?'<br><span style="font-size:10px">지난시간</span>':'')+'</div>';
     }
   }
   document.getElementById('slots').innerHTML=h;
 }
-function toggleSlot(s){ var i=SSLOTS.indexOf(s); if(i>=0) SSLOTS.splice(i,1); else SSLOTS.push(s); SSLOTS.sort(); renderSlots(); updateSel(); }
+
+/* ── 연속된 시간만 허용, 4시간(8슬롯) 초과 체크 ── */
+function toggleSlot(s){
+  var idx=SSLOTS.indexOf(s);
+  if(idx>=0){
+    SSLOTS.splice(idx,1);
+  } else {
+    var testSlots=SSLOTS.concat([s]).sort();
+    /* 연속성 체크 */
+    for(var i=0;i<testSlots.length-1;i++){
+      var p=testSlots[i].split(':'); var t=parseInt(p[0])*60+parseInt(p[1])+30;
+      var next=pad(Math.floor(t/60))+':'+pad(t%60);
+      if(testSlots[i+1]!==next){
+        alert('연속된 시간만 선택할 수 있습니다.');
+        return;
+      }
+    }
+    /* 최대 8슬롯(4시간) 체크 */
+    if(testSlots.length>8){
+      alert('최대 4시간까지 선택할 수 있습니다.\n4시간 초과 예약은 관리자 승인이 필요하며,\n현재 시스템에서는 4시간 내로 분리 예약해 주세요.');
+      return;
+    }
+    SSLOTS=testSlots;
+  }
+  SSLOTS.sort(); renderSlots(); updateSel();
+}
+
 function updateSel(){
   if(!SSLOTS.length){ document.getElementById('selbox').style.display='none'; return; }
   document.getElementById('selbox').style.display='block';
@@ -797,8 +923,21 @@ function updateSel(){
   var total=Math.round(r.price*SSLOTS.length*0.5);
   document.getElementById('sel-txt').textContent=SSLOTS[0]+' ~ '+endOf(SSLOTS);
   document.getElementById('sel-price').textContent='예상금액: '+total.toLocaleString()+'원 ('+SSLOTS.length*30+'분)';
+  /* 4시간 초과 여부 표시 */
+  if(SSLOTS.length===8){
+    document.getElementById('sel-price').textContent+=' ⚠️ 최대 4시간';
+  }
+  /* 예약 버튼 텍스트 업데이트 */
+  if(ME.role==='admin'){
+    document.getElementById('book-btn').textContent='예약 확정';
+  } else {
+    var u=getUser();
+    document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청';
+  }
 }
+
 function endOf(sl){ var last=sl[sl.length-1]; var p=last.split(':'); var t=parseInt(p[0])*60+parseInt(p[1])+30; return pad(Math.floor(t/60))+':'+pad(t%60); }
+
 function openBconfirm(){
   if(!SSLOTS.length) return;
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===RID){ r=rooms[i]; break; } }
@@ -807,24 +946,29 @@ function openBconfirm(){
   var isAdmin=ME.role==='admin';
   var uname=isAdmin?'관리자':getUser().name;
   var uphone=isAdmin?ADMIN_ID:getUser().phone;
-  var willConfirm=isAdmin||(getUser()&&!!getUser().tenancy);
+  /* 입주자도 4시간이면 승인 필요 */
+  var u=isAdmin?null:getUser();
+  var willConfirm=isAdmin||(u&&u.tenancy&&SSLOTS.length<=8);
+  /* 사실상 8슬롯 초과는 이미 막았으므로 8슬롯=4시간까지만 옴 */
   document.getElementById('bc-info').innerHTML=
     '<strong>'+r.name+'</strong><br>'+p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일<br>'
     +SSLOTS[0]+' ~ '+endOf(SSLOTS)+' ('+SSLOTS.length*30+'분)<br>'
     +'예상금액: <strong>'+total.toLocaleString()+'원</strong><br>예약자: '+uname+' ('+uphone+')'
-    +(!isAdmin&&getUser()&&!getUser().tenancy?'<br><span style="color:#633806;font-size:12px">⚠️ 입주정보 없음 — 관리자 승인 후 확정</span>':'');
+    +(!isAdmin&&u&&!u.tenancy?'<br><span style="color:#633806;font-size:12px">⚠️ 입주정보 없음 — 관리자 승인 후 확정</span>':'');
   document.getElementById('bc-t').textContent=willConfirm?'예약 확정':'승인 요청';
   document.getElementById('bc-btn').textContent=willConfirm?'확정하기':'승인 요청';
   document.getElementById('bc-err').style.display='none';
   openOv('bconfirm');
 }
+
 async function submitBook(){
   var isAdmin=ME.role==='admin';
   var uname=isAdmin?'관리자':getUser().name;
   var uphone=isAdmin?ADMIN_ID:getUser().phone;
   var uid_val=isAdmin?'admin':getUser().id;
-  var status=isAdmin?'confirmed':(getUser().tenancy?'confirmed':'pending');
-  var obj={id:uid(),rid:RID,cid:CID,uid:uid_val,uname:uname,uphone:uphone,date:SDATE,s:SSLOTS[0],e:endOf(SSLOTS),slots:SSLOTS.slice(),status:status};
+  var u=isAdmin?null:getUser();
+  var status=isAdmin?'confirmed':(u&&u.tenancy?'confirmed':'pending');
+  var obj={id:uid(),rid:RID,cid:CID,uid:uid_val,uname:uname,uphone:uphone,date:SDATE,s:SSLOTS[0],e:endOf(SSLOTS),slots:SSLOTS.slice(),status:status,created_at:new Date().toISOString()};
   var res=await sb.from('bookings').insert(obj);
   if(res.error){ alert('오류: '+res.error.message); return; }
   bookings.push(obj);
