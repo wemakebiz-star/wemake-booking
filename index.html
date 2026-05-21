@@ -823,11 +823,19 @@ function openBook(rid, caller){
   RID=rid; SDATE=null; SSLOTS=[];
   BOOK_BACK_PAGE=caller==='admin'?'pg-admin-urooms':'pg-urooms';
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===rid){ r=rooms[i]; break; } }
-  document.getElementById('book-rinfo').innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:600;font-size:16px">'+r.name+'</div><div style="display:flex;gap:5px"><span class="bge bb">'+r.cap+'인</span><span class="bge ba">'+r.price.toLocaleString()+'원/h</span></div></div>';
+  var isAdmin2=ME.role==='admin';
+  var uInfo=isAdmin2?null:getUser();
+  var countInfo='';
+  if(!isAdmin2 && uInfo && uInfo.tenancy){
+    var fc=countFutureConfirmed(ME.uid);
+    var countColor=fc>=4?'#A32D2D':'#666';
+    countInfo='<div style="font-size:12px;color:'+countColor+';margin-top:6px">📋 내 미래 확정예약: <strong>'+fc+'</strong> / 4건'+(fc>=4?' — 예약 불가':'')+'</div>';
+  }
+  document.getElementById('book-rinfo').innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:600;font-size:16px">'+r.name+'</div><div style="display:flex;gap:5px"><span class="bge bb">'+r.cap+'인</span><span class="bge ba">'+r.price.toLocaleString()+'원/h</span></div></div>'+countInfo;
   document.getElementById('book-back').onclick=function(){ show(BOOK_BACK_PAGE); };
   document.getElementById('book-home').onclick=function(){ if(ME.role==='admin') show('pg-admin'); else show('pg-user'); };
-  if(ME.role==='admin'){ document.getElementById('book-btn').textContent='예약 확정'; }
-  else { var u=getUser(); document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청'; }
+  if(isAdmin2){ document.getElementById('book-btn').textContent='예약 확정'; }
+  else { document.getElementById('book-btn').textContent=uInfo.tenancy?'예약 확정':'승인 요청'; }
   var now=new Date(); CY=now.getFullYear(); CM=now.getMonth();
   renderCal();
   document.getElementById('slots').innerHTML='';
@@ -945,16 +953,37 @@ function updateSel(){
 
 function endOf(sl){ var last=sl[sl.length-1]; var p=last.split(':'); var t=parseInt(p[0])*60+parseInt(p[1])+30; return pad(Math.floor(t/60))+':'+pad(t%60); }
 
+/* 입주 회원의 미래 확정예약 건수 계산 (시작 시간이 지나지 않은 것만) */
+function countFutureConfirmed(uid){
+  var now=new Date(); var count=0;
+  for(var i=0;i<bookings.length;i++){
+    var b=bookings[i];
+    if(b.uid!==uid || b.status!=='confirmed') continue;
+    var bookStart=new Date(b.date+'T'+b.s+':00');
+    if(bookStart>now) count++;
+  }
+  return count;
+}
+
 function openBconfirm(){
   if(!SSLOTS.length) return;
+  var isAdmin=ME.role==='admin';
+  var u=isAdmin?null:getUser();
+
+  /* 입주 회원 예약 건수 제한 체크 */
+  if(!isAdmin && u && u.tenancy){
+    var futureCount=countFutureConfirmed(ME.uid);
+    if(futureCount>=4){
+      alert('현재 확정예약이 4건입니다.\n예약 시작 시간이 지난 후 추가 예약이 가능합니다.');
+      return;
+    }
+  }
+
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===RID){ r=rooms[i]; break; } }
   var total=Math.round(r.price*SSLOTS.length*0.5);
   var p=SDATE.split('-');
-  var isAdmin=ME.role==='admin';
-  var uname=isAdmin?'관리자':getUser().name;
-  var uphone=isAdmin?ADMIN_ID:getUser().phone;
-  /* 입주자도 4시간이면 승인 필요 */
-  var u=isAdmin?null:getUser();
+  var uname=isAdmin?'관리자':u.name;
+  var uphone=isAdmin?ADMIN_ID:u.phone;
   var willConfirm=isAdmin||(u&&u.tenancy&&SSLOTS.length<=8);
   /* 사실상 8슬롯 초과는 이미 막았으므로 8슬롯=4시간까지만 옴 */
   document.getElementById('bc-info').innerHTML=
