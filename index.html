@@ -905,7 +905,7 @@ function renderSlots(){
   document.getElementById('slots').innerHTML=h;
 }
 
-/* ── 연속된 시간만 허용, 4시간(8슬롯) 초과 체크 ── */
+/* ── 연속된 시간만 허용 (4시간 초과는 승인요청으로 처리, 관리자는 무제한) ── */
 function toggleSlot(s){
   var idx=SSLOTS.indexOf(s);
   if(idx>=0){
@@ -921,11 +921,6 @@ function toggleSlot(s){
         return;
       }
     }
-    /* 최대 8슬롯(4시간) 체크 */
-    if(testSlots.length>8){
-      alert('최대 4시간까지 선택할 수 있습니다.\n4시간 초과 예약은 관리자 승인이 필요하며,\n현재 시스템에서는 4시간 내로 분리 예약해 주세요.');
-      return;
-    }
     SSLOTS=testSlots;
   }
   SSLOTS.sort(); renderSlots(); updateSel();
@@ -938,16 +933,21 @@ function updateSel(){
   var total=Math.round(r.price*SSLOTS.length*0.5);
   document.getElementById('sel-txt').textContent=SSLOTS[0]+' ~ '+endOf(SSLOTS);
   document.getElementById('sel-price').textContent='예상금액: '+total.toLocaleString()+'원 ('+SSLOTS.length*30+'분)';
-  /* 4시간 초과 여부 표시 */
-  if(SSLOTS.length===8){
-    document.getElementById('sel-price').textContent+=' ⚠️ 최대 4시간';
+  /* 4시간 초과 안내 (이용자만) */
+  if(ME.role!=='admin' && SSLOTS.length>8){
+    document.getElementById('sel-price').textContent+=' ⚠️ 4시간 초과 — 관리자 승인 필요';
   }
   /* 예약 버튼 텍스트 업데이트 */
   if(ME.role==='admin'){
     document.getElementById('book-btn').textContent='예약 확정';
   } else {
     var u=getUser();
-    document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청';
+    /* 4시간 초과이면 입주자도 승인 요청 */
+    if(SSLOTS.length>8){
+      document.getElementById('book-btn').textContent='승인 요청';
+    } else {
+      document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청';
+    }
   }
 }
 
@@ -984,13 +984,15 @@ function openBconfirm(){
   var p=SDATE.split('-');
   var uname=isAdmin?'관리자':u.name;
   var uphone=isAdmin?ADMIN_ID:u.phone;
-  var willConfirm=isAdmin||(u&&u.tenancy&&SSLOTS.length<=8);
-  /* 사실상 8슬롯 초과는 이미 막았으므로 8슬롯=4시간까지만 옴 */
+  /* 관리자: 무조건 확정 / 입주자: 4시간 이하만 즉시확정, 초과시 승인요청 / 비입주: 항상 승인요청 */
+  var over4h = SSLOTS.length > 8;
+  var willConfirm = isAdmin || (u && u.tenancy && !over4h);
   document.getElementById('bc-info').innerHTML=
     '<strong>'+r.name+'</strong><br>'+p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일<br>'
     +SSLOTS[0]+' ~ '+endOf(SSLOTS)+' ('+SSLOTS.length*30+'분)<br>'
     +'예상금액: <strong>'+total.toLocaleString()+'원</strong><br>예약자: '+uname+' ('+uphone+')'
-    +(!isAdmin&&u&&!u.tenancy?'<br><span style="color:#633806;font-size:12px">⚠️ 입주정보 없음 — 관리자 승인 후 확정</span>':'');
+    +(!isAdmin&&u&&!u.tenancy?'<br><span style="color:#633806;font-size:12px">⚠️ 입주정보 없음 — 관리자 승인 후 확정</span>':'')
+    +(!isAdmin&&over4h?'<br><span style="color:#633806;font-size:12px">⚠️ 4시간 초과 — 관리자 승인 후 확정</span>':'');
   document.getElementById('bc-t').textContent=willConfirm?'예약 확정':'승인 요청';
   document.getElementById('bc-btn').textContent=willConfirm?'확정하기':'승인 요청';
   document.getElementById('bc-err').style.display='none';
@@ -1003,7 +1005,9 @@ async function submitBook(){
   var uphone=isAdmin?ADMIN_ID:getUser().phone;
   var uid_val=isAdmin?'admin':getUser().id;
   var u=isAdmin?null:getUser();
-  var status=isAdmin?'confirmed':(u&&u.tenancy?'confirmed':'pending');
+  var over4h=SSLOTS.length>8;
+  /* 관리자: 확정 / 입주자+4시간이하: 확정 / 입주자+4시간초과: 승인요청 / 비입주: 승인요청 */
+  var status=isAdmin?'confirmed':(u&&u.tenancy&&!over4h?'confirmed':'pending');
   var obj={id:uid(),rid:RID,cid:CID,uid:uid_val,uname:uname,uphone:uphone,date:SDATE,s:SSLOTS[0],e:endOf(SSLOTS),slots:SSLOTS.slice(),status:status,created_at:new Date().toISOString()};
   var res=await sb.from('bookings').insert(obj);
   if(res.error){ alert('오류: '+res.error.message); return; }
