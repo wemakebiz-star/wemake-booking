@@ -421,7 +421,7 @@ async function loadAll(){
 }
 
 async function doLogin(){
-  var id=cleanPhone(document.getElementById('lid').value.trim());
+  var raw=document.getElementById('lid').value.trim(); var id=raw===ADMIN_ID?raw:cleanPhone(raw);
   var pw=document.getElementById('lpw').value.trim();
   var err=document.getElementById('lerr');
   if(id===ADMIN_ID&&pw===ADMIN_PW){ ME={role:'admin'}; err.style.display='none'; await loadAll(); startRealtime(); startPolling(); renderAdmin(); show('pg-admin'); return; }
