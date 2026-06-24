@@ -907,7 +907,7 @@ function renderSlots(){
   document.getElementById('slots').innerHTML=h;
 }
 
-/* ── 연속된 시간만 허용 (4시간 초과는 승인요청으로 처리, 관리자는 무제한) ── */
+/* ── 연속된 시간만 허용 (5시간 초과는 승인요청으로 처리, 관리자는 무제한) ── */
 function toggleSlot(s){
   var idx=SSLOTS.indexOf(s);
   if(idx>=0){
@@ -936,16 +936,16 @@ function updateSel(){
   document.getElementById('sel-txt').textContent=SSLOTS[0]+' ~ '+endOf(SSLOTS);
   document.getElementById('sel-price').textContent='예상금액: '+total.toLocaleString()+'원 ('+SSLOTS.length*30+'분)';
   /* 4시간 초과 안내 (이용자만) */
-  if(ME.role!=='admin' && SSLOTS.length>8){
-    document.getElementById('sel-price').textContent+=' ⚠️ 4시간 초과 — 관리자 승인 필요';
+  if(ME.role!=='admin' && SSLOTS.length>10){
+    document.getElementById('sel-price').textContent+=' ⚠️ 5시간 초과 — 관리자 승인 필요';
   }
   /* 예약 버튼 텍스트 업데이트 */
   if(ME.role==='admin'){
     document.getElementById('book-btn').textContent='예약 확정';
   } else {
     var u=getUser();
-    /* 4시간 초과이면 입주자도 승인 요청 */
-    if(SSLOTS.length>8){
+    /* 5시간 초과이면 입주자도 승인 요청 */
+    if(SSLOTS.length>10){
       document.getElementById('book-btn').textContent='승인 요청';
     } else {
       document.getElementById('book-btn').textContent=u.tenancy?'예약 확정':'승인 요청';
