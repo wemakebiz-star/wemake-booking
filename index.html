@@ -935,7 +935,7 @@ function updateSel(){
   var total=Math.round(r.price*SSLOTS.length*0.5);
   document.getElementById('sel-txt').textContent=SSLOTS[0]+' ~ '+endOf(SSLOTS);
   document.getElementById('sel-price').textContent='예상금액: '+total.toLocaleString()+'원 ('+SSLOTS.length*30+'분)';
-  /* 4시간 초과 안내 (이용자만) */
+  /* 5시간 초과 안내 (이용자만) */
   if(ME.role!=='admin' && SSLOTS.length>10){
     document.getElementById('sel-price').textContent+=' ⚠️ 5시간 초과 — 관리자 승인 필요';
   }
@@ -986,7 +986,7 @@ function openBconfirm(){
   var p=SDATE.split('-');
   var uname=isAdmin?'관리자':u.name;
   var uphone=isAdmin?ADMIN_ID:u.phone;
-  /* 관리자: 무조건 확정 / 입주자: 4시간 이하만 즉시확정, 초과시 승인요청 / 비입주: 항상 승인요청 */
+  /* 관리자: 무조건 확정 / 입주자: 5시간 이하만 즉시확정, 초과시 승인요청 / 비입주: 항상 승인요청 */
   var over4h = SSLOTS.length > 8;
   var willConfirm = isAdmin || (u && u.tenancy && !over4h);
   var paymentGuide = !isAdmin && !willConfirm
@@ -1003,7 +1003,7 @@ function openBconfirm(){
     '<strong>'+r.name+'</strong><br>'+p[0]+'년 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일<br>'
     +SSLOTS[0]+' ~ '+endOf(SSLOTS)+' ('+SSLOTS.length*30+'분)<br>'
     +'예상금액: <strong>'+total.toLocaleString()+'원</strong><br>예약자: '+uname+' ('+uphone+')'
-    +(!isAdmin&&over4h?'<br><span style="color:#633806;font-size:12px">⚠️ 4시간 초과 — 관리자 승인 후 확정</span>':'')
+    +(!isAdmin&&over4h?'<br><span style="color:#633806;font-size:12px">⚠️ 5시간 초과 — 관리자 승인 후 확정</span>':'')
     +paymentGuide;
   document.getElementById('bc-t').textContent=willConfirm?'예약 확정':'승인 요청';
   document.getElementById('bc-btn').textContent=willConfirm?'확정하기':'승인 요청';
@@ -1017,8 +1017,8 @@ async function submitBook(){
   var uphone=isAdmin?ADMIN_ID:getUser().phone;
   var uid_val=isAdmin?'admin':getUser().id;
   var u=isAdmin?null:getUser();
-  var over4h=SSLOTS.length>8;
-  /* 관리자: 확정 / 입주자+4시간이하: 확정 / 입주자+4시간초과: 승인요청 / 비입주: 승인요청 */
+  var over4h=SSLOTS.length>10;
+  /* 관리자: 확정 / 입주자+5시간이하: 확정 / 입주자+5시간초과: 승인요청 / 비입주: 승인요청 */
   var status=isAdmin?'confirmed':(u&&u.tenancy&&!over4h?'confirmed':'pending');
   var obj={id:uid(),rid:RID,cid:CID,uid:uid_val,uname:uname,uphone:uphone,date:SDATE,s:SSLOTS[0],e:endOf(SSLOTS),slots:SSLOTS.slice(),status:status,created_at:new Date().toISOString()};
   var res=await sb.from('bookings').insert(obj);
