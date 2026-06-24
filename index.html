@@ -987,7 +987,7 @@ function openBconfirm(){
   var uname=isAdmin?'관리자':u.name;
   var uphone=isAdmin?ADMIN_ID:u.phone;
   /* 관리자: 무조건 확정 / 입주자: 5시간 이하만 즉시확정, 초과시 승인요청 / 비입주: 항상 승인요청 */
-  var over4h = SSLOTS.length > 8;
+  var over4h = SSLOTS.length > 10;
   var willConfirm = isAdmin || (u && u.tenancy && !over4h);
   var paymentGuide = !isAdmin && !willConfirm
     ? '<br><div style="margin-top:10px;padding:10px;background:#fff8e6;border-radius:8px;border:1px solid #FAC775;font-size:12px;line-height:1.8;color:#333">'
