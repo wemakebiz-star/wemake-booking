@@ -293,6 +293,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
   <label style="color:#aaa">이름 (수정 불가)</label><input id="me-name" disabled style="opacity:.5">
   <label style="color:#aaa">핸드폰번호 (수정 불가)</label><input id="me-phone" disabled style="opacity:.5">
   <label>입주정보</label><input id="me-tenancy" placeholder="입주정보">
+  <label>새 비밀번호 <span style="color:#aaa;font-size:12px">(변경 시에만 입력)</span></label><input id="me-pw" type="password" placeholder="새 비밀번호">
   <label>업체명</label><input id="me-company" placeholder="업체명">
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('medit')">취소</button><button class="btn bp sm" onclick="saveMedit()">저장</button></div>
 </div></div>
@@ -565,8 +566,12 @@ function openMedit(id){
 }
 async function saveMedit(){
   var id=document.getElementById('me-id').value, tenancy=document.getElementById('me-tenancy').value.trim(), company=document.getElementById('me-company').value.trim();
-  await sb.from('members').update({tenancy:tenancy,company:company}).eq('id',id);
-  for(var i=0;i<members.length;i++){ if(members[i].id===id){ members[i].tenancy=tenancy; members[i].company=company; break; } }
+  var newpw=document.getElementById('me-pw').value.trim();
+  var upd={tenancy:tenancy,company:company};
+  if(newpw) upd.pw=newpw;
+  await sb.from('members').update(upd).eq('id',id);
+  for(var i=0;i<members.length;i++){ if(members[i].id===id){ members[i].tenancy=tenancy; members[i].company=company; if(newpw) members[i].pw=newpw; break; } }
+  document.getElementById('me-pw').value='';
   closeOv('medit'); renderMembers();
 }
 async function delMember(id){
