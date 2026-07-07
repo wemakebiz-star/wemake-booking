@@ -67,6 +67,9 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .week-table td.wcell.free{cursor:pointer}
 .week-table td.wcell.free:hover{background:#fdf3d0}
 .wleg{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px}
+.admin-week-table td.wcell{height:40px;font-size:10px;line-height:1.2;padding:2px;vertical-align:middle;white-space:normal;word-break:keep-all;cursor:default}
+.admin-week-table td.wcell.taken{cursor:pointer;color:#A32D2D}
+.admin-week-table td.wcell.pend{cursor:pointer;color:#633806}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:60px 1rem 1rem}
 .ov.on{display:flex}
 .modal{background:#fff;border-radius:14px;border:1px solid #e8e9ef;padding:1.5rem;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
@@ -169,8 +172,28 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
     <div id="at-0"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bp sm" onclick="openMC(null)">+ 장소 추가</button></div><div id="list-centers"></div></div>
     <div id="at-1" style="display:none"><div id="list-members"></div></div>
     <div id="at-2" style="display:none">
-      <div class="tabs"><button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button><button class="tab" id="bt1" onclick="bTab(1)">확정예약</button><button class="tab" id="bt2" onclick="bTab(2)">취소요청</button></div>
+      <div class="tabs"><button class="tab on" id="bt0" onclick="bTab(0)">승인요청</button><button class="tab" id="bt1" onclick="bTab(1)">확정예약</button><button class="tab" id="bt2" onclick="bTab(2)">취소요청</button><button class="tab" id="bt3" onclick="bTab(3)">📅 주간현황</button></div>
       <div id="list-bookings"></div>
+      <div id="admin-week-wrap" style="display:none">
+        <div style="margin-bottom:10px">
+          <select id="aweek-room" onchange="onAdminWeekRoomChange()" style="width:100%;padding:8px;border:1px solid #e8e9ef;border-radius:8px;font-size:14px"></select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px">
+          <button class="btn sm" onclick="moveAdminWeek(-1)">◀ 이전주</button>
+          <span id="aweek-lbl" style="font-size:14px;font-weight:600"></span>
+          <button class="btn sm" onclick="moveAdminWeek(0)">오늘</button>
+          <button class="btn sm" onclick="moveAdminWeek(1)">다음주 ▶</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="admin-week-table" class="week-table admin-week-table"></table>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:#888;display:flex;gap:12px;flex-wrap:wrap">
+          <span><span class="wleg" style="background:#FCEBEB"></span>확정</span>
+          <span><span class="wleg" style="background:#FAEEDA"></span>승인대기</span>
+          <span><span class="wleg" style="background:#f0f2f8"></span>지난시간</span>
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:#aaa">칸을 누르면 해당 예약 상세로 이동합니다.</div>
+      </div>
     </div>
     <div id="at-3" style="display:none"><div id="admin-book-centers"></div></div>
   </div>
@@ -496,10 +519,17 @@ function renderAdmin(){
   if(cancelReq>0) msgs.push('취소 요청 <strong>'+cancelReq+'건</strong>');
   b.innerHTML=msgs.length?'<div class="abanner" style="cursor:pointer" onclick="goToPendingTab()">🔔 '+msgs.join(' | ')+' 있습니다. <span style="font-size:12px;text-decoration:underline">바로가기 →</span></div>':'';
   renderCenters(); renderMembers(); renderAdminBooks(); renderAdminBookCenters();
+  if(ABTAB===3 && AWROOM) renderAdminWeekTable();
 }
 
 function aTab(n){ for(var i=0;i<4;i++){ document.getElementById('at'+i).classList.toggle('on',i===n); document.getElementById('at-'+i).style.display=i===n?'block':'none'; } }
-function bTab(n){ ABTAB=n; for(var i=0;i<3;i++) document.getElementById('bt'+i).classList.toggle('on',i===n); renderAdminBooks(); }
+function bTab(n){
+  ABTAB=n;
+  for(var i=0;i<4;i++){ var elb=document.getElementById('bt'+i); if(elb) elb.classList.toggle('on',i===n); }
+  document.getElementById('list-bookings').style.display=n===3?'none':'';
+  document.getElementById('admin-week-wrap').style.display=n===3?'block':'none';
+  if(n===3){ initAdminWeek(); } else { renderAdminBooks(); }
+}
 
 function renderCenters(){
   var el=document.getElementById('list-centers');
@@ -645,6 +675,82 @@ function renderAdminBooks(){
       +'</div></div></div>';
   }
   h+='</div>'; el.innerHTML=h;
+}
+
+/* ── 관리자: 예약관리 - 주간현황 (업체명 표시) ── */
+var AWROOM=null, AWSTART=null;
+function initAdminWeek(){
+  var sel=document.getElementById('aweek-room');
+  var opts='';
+  for(var i=0;i<rooms.length;i++){
+    var r=rooms[i]; var cn='?';
+    for(var j=0;j<centers.length;j++){ if(centers[j].id===r.cid){ cn=centers[j].name; break; } }
+    opts+='<option value="'+r.id+'">'+cn+' - '+r.name+'</option>';
+  }
+  sel.innerHTML=opts;
+  var stillValid=false; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===AWROOM){ stillValid=true; break; } }
+  if(!stillValid){ AWROOM=rooms.length?rooms[0].id:null; }
+  if(AWROOM) sel.value=AWROOM;
+  if(!AWSTART) AWSTART=getMonday(new Date());
+  renderAdminWeekTable();
+}
+function onAdminWeekRoomChange(){
+  AWROOM=document.getElementById('aweek-room').value;
+  renderAdminWeekTable();
+}
+function moveAdminWeek(dir){
+  if(dir===0){ AWSTART=getMonday(new Date()); }
+  else { AWSTART=new Date(AWSTART); AWSTART.setDate(AWSTART.getDate()+dir*7); }
+  renderAdminWeekTable();
+}
+function renderAdminWeekTable(){
+  var tbl=document.getElementById('admin-week-table');
+  if(!AWROOM){ tbl.innerHTML=''; document.getElementById('aweek-lbl').textContent='등록된 회의실이 없습니다'; return; }
+  var days=[]; for(var i=0;i<7;i++){ var d=new Date(AWSTART); d.setDate(AWSTART.getDate()+i); days.push(d); }
+  document.getElementById('aweek-lbl').textContent=dateStr(days[0])+' ~ '+dateStr(days[6]);
+  var dayNames=['월','화','수','목','금','토','일'];
+  var now=new Date(); var today=new Date(); today.setHours(0,0,0,0);
+  var nowMin=now.getHours()*60+now.getMinutes(); var todayStr=dateStr(now);
+
+  /* 이 방(AWROOM)의 예약을 날짜/슬롯별로 분류, 업체명(없으면 이름) 라벨 포함 */
+  var map={};
+  for(var i=0;i<bookings.length;i++){
+    var b=bookings[i]; if(b.rid!==AWROOM) continue;
+    if(b.status!=='confirmed'&&b.status!=='cancel_request'&&b.status!=='pending') continue;
+    var sl=b.slots||[]; if(!map[b.date]) map[b.date]={};
+    var company=getMemberCompany(b.uid);
+    var label=company||b.uname||'';
+    var tag=b.status==='pending'?'pend':'taken';
+    for(var j=0;j<sl.length;j++){ map[b.date][sl[j]]={status:tag,label:label,id:b.id}; }
+  }
+
+  var h='<thead><tr><th style="width:56px">시간</th>';
+  var dstrs=[];
+  for(var i=0;i<7;i++){
+    var dstr=dateStr(days[i]); dstrs.push(dstr);
+    var isTod=dstr===todayStr;
+    h+='<th'+(isTod?' class="wtod"':'')+'>'+dayNames[i]+'<br>'+(days[i].getMonth()+1)+'/'+days[i].getDate()+'</th>';
+  }
+  h+='</tr></thead><tbody>';
+
+  for(var hr=8;hr<22;hr++){
+    for(var mn=0;mn<60;mn+=30){
+      var sl=pad(hr)+':'+pad(mn);
+      h+='<tr><td class="wtime">'+sl+'</td>';
+      for(var i=0;i<7;i++){
+        var dt=days[i], dstr=dstrs[i];
+        var isPast=dt<today||(dstr===todayStr&&(hr*60+mn)<=nowMin);
+        var info=map[dstr]&&map[dstr][sl]?map[dstr][sl]:null;
+        var cls='wcell', clickAttr='', label='';
+        if(info){ cls+=' '+info.status; label=info.label; clickAttr=' onclick="openBedit(\''+info.id+'\')"'; }
+        else if(isPast){ cls+=' past'; }
+        h+='<td class="'+cls+'"'+clickAttr+'>'+label+'</td>';
+      }
+      h+='</tr>';
+    }
+  }
+  h+='</tbody>';
+  tbl.innerHTML=h;
 }
 
 async function approveBook(id){
