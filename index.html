@@ -147,7 +147,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
     <div id="pending-banner"></div>
     <div class="admin-tabs-fixed">
       <div class="tabs" style="margin-bottom:0">
-        <button class="tab on" id="at0" onclick="aTab(0)">🏢 센터</button>
+        <button class="tab on" id="at0" onclick="aTab(0)">🏢 장소</button>
         <button class="tab" id="at1" onclick="aTab(1)">👥 회원</button>
         <button class="tab" id="at2" onclick="aTab(2)">📋 예약관리</button>
         <button class="tab" id="at3" onclick="aTab(3)">📅 예약하기</button>
@@ -169,7 +169,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
     <!-- 관리자 고정 탭 -->
     <div class="admin-tabs-fixed">
       <div class="tabs" style="margin-bottom:0">
-        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 센터</button>
+        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 장소</button>
         <button class="tab" onclick="show('pg-admin');aTab(1)">👥 회원</button>
         <button class="tab" onclick="show('pg-admin');aTab(2)">📋 예약관리</button>
         <button class="tab" onclick="show('pg-admin');aTab(3)">📅 예약하기</button>
@@ -183,10 +183,10 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 
 <div id="pg-admin-urooms" class="pg">
   <div class="wrap">
-    <div class="topbar"><button class="btn sm" onclick="show('pg-admin');aTab(3)">← 센터 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
+    <div class="topbar"><button class="btn sm" onclick="show('pg-admin');aTab(3)">← 장소 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div class="admin-tabs-fixed">
       <div class="tabs" style="margin-bottom:0">
-        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 센터</button>
+        <button class="tab" onclick="show('pg-admin');aTab(0)">🏢 장소</button>
         <button class="tab" onclick="show('pg-admin');aTab(1)">👥 회원</button>
         <button class="tab" onclick="show('pg-admin');aTab(2)">📋 예약관리</button>
         <button class="tab on" onclick="show('pg-admin');aTab(3)">📅 예약하기</button>
@@ -245,12 +245,12 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <div id="pg-user" class="pg">
   <div class="wrap">
     <div class="topbar">
-      <div><div style="font-size:17px;font-weight:700">센터 목록</div><div id="uwelcome" style="font-size:13px;color:#666"></div></div>
+      <div><div style="font-size:17px;font-weight:700">장소 목록</div><div id="uwelcome" style="font-size:13px;color:#666"></div></div>
       <button class="btn sm" onclick="logout()">로그아웃</button>
     </div>
     <div id="ubanner"></div>
     <div class="tabs">
-      <button class="tab on" id="ut0" onclick="uTab(0)">🏢 센터</button>
+      <button class="tab on" id="ut0" onclick="uTab(0)">🏢 장소</button>
       <button class="tab" id="ut1" onclick="uTab(1)">📅 내 예약</button>
     </div>
     <div id="ut-0"><div id="list-ucenters"></div></div>
@@ -263,7 +263,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 
 <div id="pg-urooms" class="pg">
   <div class="wrap">
-    <div class="topbar"><button class="btn sm" onclick="show('pg-user')">← 센터 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
+    <div class="topbar"><button class="btn sm" onclick="show('pg-user')">← 장소 목록</button><button class="btn sm" onclick="logout()">로그아웃</button></div>
     <div id="uroom-cinfo" class="card" style="margin-bottom:1rem"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:10px">회의실 선택</div>
     <div id="list-urooms" class="g2"></div>
@@ -273,7 +273,7 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 <!-- 모달들 -->
 <div id="ov-mc" class="ov"><div class="modal">
   <h3 id="mc-t">장소 추가</h3><input type="hidden" id="mc-id">
-  <label>센터 이름</label><input id="mc-name" type="text" placeholder="센터 이름">
+  <label>장소 이름</label><input id="mc-name" type="text" placeholder="장소 이름">
   <label>전화번호</label><input id="mc-phone" type="text" placeholder="02-0000-0000">
   <label>주소</label><input id="mc-addr" type="text" placeholder="주소">
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn sm" onclick="closeOv('mc')">취소</button><button class="btn bp sm" onclick="saveCenter()">저장</button></div>
@@ -518,7 +518,7 @@ async function saveCenter(){
   closeOv('mc'); renderCenters(); if(id&&CID===id) openArooms(id);
 }
 async function delCenter(id){
-  if(!confirm('센터를 삭제할까요?')) return;
+  if(!confirm('장소를 삭제할까요?')) return;
   await sb.from('bookings').delete().eq('cid',id); await sb.from('rooms').delete().eq('cid',id); await sb.from('centers').delete().eq('id',id);
   centers=centers.filter(function(c){return c.id!==id;}); rooms=rooms.filter(function(r){return r.cid!==id;}); bookings=bookings.filter(function(b){return b.cid!==id;});
   renderCenters();
