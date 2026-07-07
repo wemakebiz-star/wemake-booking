@@ -54,6 +54,19 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
 .slot.past-time{background:#f0f2f8;color:#bbb;border-color:#e8e9ef;cursor:not-allowed}
 .slot.pick{background:#b8860b;color:#fff;border-color:#b8860b}
 .slot.mine{background:#0C447C;color:#fff;border-color:#0C447C;cursor:not-allowed}
+.week-table{border-collapse:collapse;width:100%;min-width:620px}
+.week-table th,.week-table td{border:1px solid #e8e9ef;text-align:center;padding:0}
+.week-table th{background:#f7f8fb;color:#666;font-weight:600;font-size:11px;padding:6px 2px;line-height:1.4}
+.week-table th.wtod{color:#b8860b}
+.week-table td.wtime{background:#f7f8fb;color:#888;font-size:10px;padding:4px 2px;white-space:nowrap}
+.week-table td.wcell{height:24px;cursor:default}
+.week-table td.wcell.taken{background:#FCEBEB}
+.week-table td.wcell.pend{background:#FAEEDA}
+.week-table td.wcell.mine{background:#0C447C}
+.week-table td.wcell.past{background:#f0f2f8}
+.week-table td.wcell.free{cursor:pointer}
+.week-table td.wcell.free:hover{background:#fdf3d0}
+.wleg{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:60px 1rem 1rem}
 .ov.on{display:flex}
 .modal{background:#fff;border-radius:14px;border:1px solid #e8e9ef;padding:1.5rem;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
@@ -205,11 +218,30 @@ label{font-size:13px;color:#666;display:block;margin-bottom:3px}
       <div style="display:flex;gap:8px">
         <button class="btn sm" id="book-back">← 회의실 목록</button>
         <button class="btn sm" id="book-home">🏠 홈</button>
+        <button class="btn sm" id="week-toggle-btn" onclick="toggleWeekView()">📅 주간보기</button>
       </div>
       <button class="btn sm" onclick="logout()">로그아웃</button>
     </div>
     <div id="book-rinfo" class="card" style="margin-bottom:1rem"></div>
-    <div class="g2" style="align-items:start">
+    <div id="week-view" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px">
+        <button class="btn sm" onclick="moveWeek(-1)">◀ 이전주</button>
+        <span id="week-lbl" style="font-size:14px;font-weight:600"></span>
+        <button class="btn sm" onclick="moveWeek(0)">오늘</button>
+        <button class="btn sm" onclick="moveWeek(1)">다음주 ▶</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="week-table" class="week-table"></table>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#888;display:flex;gap:12px;flex-wrap:wrap">
+        <span><span class="wleg" style="background:#FCEBEB"></span>예약됨</span>
+        <span><span class="wleg" style="background:#FAEEDA"></span>승인대기</span>
+        <span><span class="wleg" style="background:#0C447C"></span>내 예약</span>
+        <span><span class="wleg" style="background:#f0f2f8"></span>지난시간</span>
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:#aaa">빈 칸을 누르면 해당 날짜의 예약 화면으로 이동합니다.</div>
+    </div>
+    <div id="daily-view" class="g2" style="align-items:start">
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <button class="btn sm" onclick="mv(-1)">◀</button>
@@ -734,6 +766,7 @@ function openUrooms(cid){
 /* 예약에서 캘린더로 이동 */
 function goToBooking(bk){
   RID=bk.rid; CID=bk.cid; SDATE=null; SSLOTS=[];
+  resetWeekView();
   BOOK_BACK_PAGE='pg-user';
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===bk.rid){ r=rooms[i]; break; } }
   if(!r) return;
@@ -828,6 +861,7 @@ async function cancelPending(id){
 /* ── 예약 페이지 ── */
 function openBook(rid, caller){
   RID=rid; SDATE=null; SSLOTS=[];
+  resetWeekView();
   BOOK_BACK_PAGE=caller==='admin'?'pg-admin-urooms':'pg-urooms';
   var r=null; for(var i=0;i<rooms.length;i++){ if(rooms[i].id===rid){ r=rooms[i]; break; } }
   var isAdmin2=ME.role==='admin';
@@ -849,6 +883,80 @@ function openBook(rid, caller){
   document.getElementById('slot-lbl').textContent='날짜를 선택하세요';
   document.getElementById('selbox').style.display='none';
   show('pg-book');
+}
+
+/* ── 주간보기 ── */
+var WVIEW=false, WSTART=null;
+function getMonday(d){ var x=new Date(d); var day=x.getDay(); var diff=(day===0?-6:1-day); x.setDate(x.getDate()+diff); x.setHours(0,0,0,0); return x; }
+function resetWeekView(){ WVIEW=false; WSTART=null; document.getElementById('week-view').style.display='none'; document.getElementById('daily-view').style.display=''; document.getElementById('week-toggle-btn').textContent='📅 주간보기'; }
+function toggleWeekView(){
+  WVIEW=!WVIEW;
+  document.getElementById('daily-view').style.display=WVIEW?'none':'';
+  document.getElementById('week-view').style.display=WVIEW?'block':'none';
+  document.getElementById('week-toggle-btn').textContent=WVIEW?'📆 월간보기':'📅 주간보기';
+  if(WVIEW){
+    if(!WSTART) WSTART=getMonday(SDATE?new Date(SDATE):new Date());
+    renderWeek();
+  }
+}
+function moveWeek(dir){
+  if(dir===0){ WSTART=getMonday(new Date()); }
+  else { WSTART=new Date(WSTART); WSTART.setDate(WSTART.getDate()+dir*7); }
+  renderWeek();
+}
+function renderWeek(){
+  var days=[]; for(var i=0;i<7;i++){ var d=new Date(WSTART); d.setDate(WSTART.getDate()+i); days.push(d); }
+  document.getElementById('week-lbl').textContent=dateStr(days[0])+' ~ '+dateStr(days[6]);
+  var dayNames=['월','화','수','목','금','토','일'];
+  var now=new Date(); var today=new Date(); today.setHours(0,0,0,0);
+  var nowMin=now.getHours()*60+now.getMinutes(); var todayStr=dateStr(now);
+  var myUid=ME&&ME.uid?ME.uid:null;
+
+  /* 이 방(RID)의 예약을 날짜/슬롯별로 미리 분류 */
+  var map={};
+  for(var i=0;i<bookings.length;i++){
+    var b=bookings[i]; if(b.rid!==RID) continue;
+    if(b.status!=='confirmed'&&b.status!=='cancel_request'&&b.status!=='pending') continue;
+    var sl=b.slots||[]; if(!map[b.date]) map[b.date]={};
+    var tag = b.status==='pending' ? 'pend' : (myUid&&b.uid===myUid ? 'mine' : 'taken');
+    for(var j=0;j<sl.length;j++){ map[b.date][sl[j]]=tag; }
+  }
+
+  var h='<thead><tr><th style="width:56px">시간</th>';
+  var dstrs=[];
+  for(var i=0;i<7;i++){
+    var dstr=dateStr(days[i]); dstrs.push(dstr);
+    var isTod=dstr===todayStr;
+    h+='<th'+(isTod?' class="wtod"':'')+'>'+dayNames[i]+'<br>'+(days[i].getMonth()+1)+'/'+days[i].getDate()+'</th>';
+  }
+  h+='</tr></thead><tbody>';
+
+  for(var hr=8;hr<22;hr++){
+    for(var mn=0;mn<60;mn+=30){
+      var sl=pad(hr)+':'+pad(mn);
+      h+='<tr><td class="wtime">'+sl+'</td>';
+      for(var i=0;i<7;i++){
+        var dt=days[i], dstr=dstrs[i];
+        var isPast = dt<today || (dstr===todayStr && (hr*60+mn)<=nowMin);
+        var status = map[dstr]&&map[dstr][sl] ? map[dstr][sl] : null;
+        var cls='wcell', clickAttr='';
+        if(status==='mine') cls+=' mine';
+        else if(status==='taken') cls+=' taken';
+        else if(status==='pend') cls+=' pend';
+        else if(isPast) cls+=' past';
+        else { cls+=' free'; clickAttr=' onclick="weekCellClick(\''+dstr+'\')"'; }
+        h+='<td class="'+cls+'"'+clickAttr+'></td>';
+      }
+      h+='</tr>';
+    }
+  }
+  h+='</tbody>';
+  document.getElementById('week-table').innerHTML=h;
+}
+function weekCellClick(dstr){
+  var p=dstr.split('-'); CY=parseInt(p[0]); CM=parseInt(p[1])-1;
+  toggleWeekView();
+  selDay(dstr);
 }
 
 function mv(d){ CM+=d; if(CM>11){CM=0;CY++;} if(CM<0){CM=11;CY--;} renderCal(); }
